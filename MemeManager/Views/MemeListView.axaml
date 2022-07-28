@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:MemeManager.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="300"
+             x:Class="MemeManager.Views.MemeListView"
+             xmlns:local="using:MemeManager.Views">
+    <Design.DataContext>
+        <vm:MemeListViewModel/>
+    </Design.DataContext>
+    <!-- https://github.com/AvaloniaUI/Avalonia/discussions/5517#discussion-3228287 for grid-like stuff -->
+    <ListBox Items="{Binding Memes, Mode=OneWay}" >
+        <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+                <WrapPanel />
+            </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <local:FileView Margin="0 0 20 20" />
+                <!-- <StackPanel Orientation="Horizontal"> -->
+                <!--     <TextBlock Text="{Binding Id, Mode=TwoWay}"></TextBlock> -->
+                <!--     <TextBlock Text="{Binding Name, Mode=OneWay}" Margin="5,0,0,0" ></TextBlock> -->
+                <!-- </StackPanel> -->
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
+    <!-- <DockPanel> -->
+    <!--     ~1~ <Button DockPanel.Dock="Bottom" @1@ -->
+    <!--     ~1~         Command="{Binding $parent[Window].DataContext.AddItem}"> @1@ -->
+    <!--     ~1~     Add an item @1@ -->
+    <!--     ~1~ </Button> @1@ -->
+    <!--     <Grid> -->
+    <!--     <DataGrid Items="{Binding Items}"> -->
+    <!--         ~1~ <ItemsControl.ItemTemplate> @1@ -->
+    <!--             <DataTemplate> -->
+    <!--                 <TextBlock Text="{Binding Name}"/> -->
+    <!--             </DataTemplate> -->
+    <!--         ~1~ </ItemsControl.ItemTemplate> @1@ -->
+    <!--     </DataGrid> -->
+    <!--     </Grid> -->
+    <!-- </DockPanel> -->
+</UserControl>

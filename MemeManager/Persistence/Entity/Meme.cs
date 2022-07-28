@@ -1,5 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using EFGetStarted.Persistence;
+using MemeManager.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace MemeManager.Persistence.Entity;
 
@@ -7,10 +12,9 @@ public class Meme
 {
     public int Id { get; set; }
     /// <summary>
-    /// The name of the meme. This is nullable because setting a name for memes is optional.
-    /// If a meme hasn't been explicitly named, it'll just be displayed with its file name.
+    /// The name of the meme. If a meme hasn't been explicitly named, it'll just be displayed with its file name.
     /// </summary>
-    public string? Name { set; get; }
+    public string Name { set; get; }
     public string Path { get; set; }
     public string? CachedThumbnailPath { get; set; }
     // TODO: I might want to make this default to the file creation date when the library is first initialized
@@ -29,5 +33,23 @@ public class Meme
         Video,
         Gif,
         Other
+    }
+
+    public async Task<Stream> LoadThumbnailAsync()
+    {
+        if (File.Exists(CachedThumbnailPath))
+        {
+            return File.OpenRead(CachedThumbnailPath);
+        }
+        else
+        {
+            throw new Exception("Thumbnail not found");
+        }
+    }
+
+    public static async Task<IEnumerable<Meme>> LoadCachedAsync()
+    {
+        return await new Database().GetMemesAsync();
+        // return await new MemeManagerContext().Memes.ToListAsync();
     }
 }
