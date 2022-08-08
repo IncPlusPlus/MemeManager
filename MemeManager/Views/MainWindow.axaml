@@ -3,15 +3,25 @@
         xmlns:vm="clr-namespace:MemeManager.ViewModels;assembly=MemeManager"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:main="clr-namespace:MemeManager.Views.Main"
+        xmlns:implementations="clr-namespace:MemeManager.ViewModels.Implementations"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="MemeManager.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
-        Title="MemeManager"
-        Content="{Binding Content}">
-
+        Title="MemeManager">
     <Design.DataContext>
-        <vm:MainWindowViewModel/>
+        <implementations:MainWindowViewModel/>
     </Design.DataContext>
 
+    <!-- TODO: Look into the <Window.KeyBindings> tag as seen in Camelot's MainWindow.xaml -->
+    
+    <Grid RowDefinitions="35,Auto,*,Auto">
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto,4*">
+            <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" />
+            <GridSplitter Grid.Column="1" ShowsPreview="False"
+                          HorizontalAlignment="Stretch" />
+            <main:MemeListView Grid.Column="2" DataContext="{Binding MemesListViewModel}" />
+        </Grid>
+    </Grid>
 
 </Window>

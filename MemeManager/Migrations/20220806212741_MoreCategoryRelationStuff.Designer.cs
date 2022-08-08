@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MemeManager.Migrations
 {
     [DbContext(typeof(MemeManagerContext))]
-    [Migration("20220723152539_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20220806212741_MoreCategoryRelationStuff")]
+    partial class MoreCategoryRelationStuff
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -29,13 +29,18 @@ namespace MemeManager.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("ParentId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Path")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Category");
+                    b.HasIndex("ParentId");
+
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("MemeManager.Persistence.Entity.Meme", b =>
@@ -51,13 +56,17 @@ namespace MemeManager.Migrations
                     b.Property<string>("CachedThumbnailPath")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("HasBeenCategorized")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("MediaType")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Path")
@@ -104,13 +113,20 @@ namespace MemeManager.Migrations
                     b.ToTable("MemeTag");
                 });
 
+            modelBuilder.Entity("MemeManager.Persistence.Entity.Category", b =>
+                {
+                    b.HasOne("MemeManager.Persistence.Entity.Category", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId");
+
+                    b.Navigation("Parent");
+                });
+
             modelBuilder.Entity("MemeManager.Persistence.Entity.Meme", b =>
                 {
                     b.HasOne("MemeManager.Persistence.Entity.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany("Memes")
+                        .HasForeignKey("CategoryId");
 
                     b.Navigation("Category");
                 });
@@ -128,6 +144,13 @@ namespace MemeManager.Migrations
                         .HasForeignKey("TagsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MemeManager.Persistence.Entity.Category", b =>
+                {
+                    b.Navigation("Children");
+
+                    b.Navigation("Memes");
                 });
 #pragma warning restore 612, 618
         }

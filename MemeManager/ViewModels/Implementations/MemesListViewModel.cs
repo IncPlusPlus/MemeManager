@@ -1,15 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Linq;
-using MemeManager.Persistence.Entity;
 using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using MemeManager.Persistence;
+using MemeManager.ViewModels.Interfaces;
 using ReactiveUI;
 
-namespace MemeManager.ViewModels;
+namespace MemeManager.ViewModels.Implementations;
 
-public class MemeListViewModel : ViewModelBase
+public class MemesListViewModel : ViewModelBase, IMemesListViewModel
 {
-    public MemeListViewModel(IEnumerable<Meme> memes)
+    public MemesListViewModel()
     {
         RxApp.MainThreadScheduler.Schedule(LoadMemes);
     }

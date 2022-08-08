@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:MemeManager.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="300"
+             x:Class="MemeManager.Views.Main.CategoriesListView"
+             xmlns:local="using:MemeManager.Views"
+             xmlns:viewModels="clr-namespace:MemeManager.ViewModels.Implementations">
+    <Design.DataContext>
+        <viewModels:CategoriesListViewModel/>
+    </Design.DataContext>
+    
+    <!-- <TextBlock Text="Hi there!" HorizontalAlignment="Center" VerticalAlignment="Center"/> -->
+    
+    <TreeDataGrid Name="categoryViewer" Source="{Binding Source}">
+        <TreeDataGrid.Styles>
+            <Style Selector="TreeDataGrid TreeDataGridRow:nth-child(2n)">
+                <Setter Property="Background"  Value="#fff8f8f8"/>
+            </Style>
+        </TreeDataGrid.Styles>
+    </TreeDataGrid>
+    
+    <!-- <ItemsControl Items="{Binding Tags}"> -->
+    <!--     <ItemsControl.ItemTemplate> -->
+    <!--         <DataTemplate> -->
+    <!--             <CheckBox Margin="4" -->
+    <!--                       IsChecked="False" -->
+    <!--                       Content="{Binding Name}"/> -->
+    <!--         </DataTemplate> -->
+    <!--     </ItemsControl.ItemTemplate> -->
+    <!-- </ItemsControl> -->
+</UserControl>

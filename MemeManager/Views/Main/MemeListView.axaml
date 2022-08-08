@@ -4,16 +4,17 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:MemeManager.ViewModels"
              mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="300"
-             x:Class="MemeManager.Views.MemeListView"
-             xmlns:local="using:MemeManager.Views">
+             x:Class="MemeManager.Views.Main.MemeListView"
+             xmlns:local="using:MemeManager.Views"
+             xmlns:implementations="clr-namespace:MemeManager.ViewModels.Implementations">
     <Design.DataContext>
-        <vm:MemeListViewModel/>
+        <implementations:MemesListViewModel/>
     </Design.DataContext>
     <!-- https://github.com/AvaloniaUI/Avalonia/discussions/5517#discussion-3228287 for grid-like stuff -->
     <ListBox Items="{Binding Memes, Mode=OneWay}" >
         <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
-                <WrapPanel />
+                <WrapPanel Width="{Binding $parent[ScrollContentPresenter].Bounds.Width, Mode=OneWay}"/>
             </ItemsPanelTemplate>
         </ListBox.ItemsPanel>
         <ListBox.ItemTemplate>

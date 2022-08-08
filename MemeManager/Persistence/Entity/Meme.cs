@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using EFGetStarted.Persistence;
 using MemeManager.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,9 +22,15 @@ public class Meme
     /// A tag is for labelling a meme with all relevant terms
     /// </summary>
     public virtual ICollection<Tag> Tags { get; set; }
-    public virtual Category Category { get; set; }
+    public virtual Category? Category { get; set; }
     public string AdditionalTerms { get; set; }
     public FileMediaType MediaType { get; set; }
+    
+    /// <summary>
+    /// True if the user has already added their desired name, tags, and category to this meme. False if this file
+    /// was recently discovered and hasn't been reviewed by the user yet.
+    /// </summary>
+    public bool HasBeenCategorized { get; set; }
 
     public enum FileMediaType
     {

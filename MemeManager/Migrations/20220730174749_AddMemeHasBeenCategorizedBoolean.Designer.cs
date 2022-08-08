@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MemeManager.Migrations
 {
     [DbContext(typeof(MemeManagerContext))]
-    [Migration("20220723152539_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20220730174749_AddMemeHasBeenCategorizedBoolean")]
+    partial class AddMemeHasBeenCategorizedBoolean
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -54,10 +54,14 @@ namespace MemeManager.Migrations
                     b.Property<int>("CategoryId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("HasBeenCategorized")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("MediaType")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Path")

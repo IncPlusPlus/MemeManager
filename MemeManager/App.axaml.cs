@@ -3,11 +3,15 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using MemeManager.Services;
 using MemeManager.ViewModels;
+using MemeManager.ViewModels.Implementations;
+using MemeManager.ViewModels.Interfaces;
 using MemeManager.Views;
+using Splat;
+using MemeManager.DependencyInjection;
 
 namespace MemeManager
 {
-    public partial class App : Application
+    public class App : Application
     {
         public override void Initialize()
         {
@@ -18,13 +22,16 @@ namespace MemeManager
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
+                DataContext = GetRequiredService<IMainWindowViewModel>();
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(),
+                    DataContext = DataContext
                 };
             }
 
             base.OnFrameworkInitializationCompleted();
         }
+
+        private static T GetRequiredService<T>() => Locator.Current.GetRequiredService<T>();
     }
 }
