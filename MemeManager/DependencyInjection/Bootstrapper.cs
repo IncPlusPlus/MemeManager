@@ -11,7 +11,7 @@ public class Bootstrapper
         LoggingBootstrapper.RegisterLogging(services, resolver);
         // AvaloniaServicesBootstrapper.RegisterAvaloniaServices(services);
         // FileSystemWatcherServicesBootstrapper.RegisterFileSystemWatcherServices(services, resolver);
-        //    DataAccessBootstrapper.RegisterDataAccess(services, resolver);
+        DataAccessBootstrapper.RegisterDataAccess(services, resolver);
         // ServicesBootstrapper.RegisterServices(services, resolver);
         ViewModelsBootstrapper.RegisterViewModels(services, resolver);
     }

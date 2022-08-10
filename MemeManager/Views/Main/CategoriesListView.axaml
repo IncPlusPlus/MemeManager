@@ -11,23 +11,15 @@
         <viewModels:CategoriesListViewModel/>
     </Design.DataContext>
     
-    <!-- <TextBlock Text="Hi there!" HorizontalAlignment="Center" VerticalAlignment="Center"/> -->
+    <StackPanel>
+        <Button Command="{Binding ClearCategorySelection}">Deselect</Button>
     
-    <TreeDataGrid Name="categoryViewer" Source="{Binding Source}">
-        <TreeDataGrid.Styles>
-            <Style Selector="TreeDataGrid TreeDataGridRow:nth-child(2n)">
-                <Setter Property="Background"  Value="#fff8f8f8"/>
-            </Style>
-        </TreeDataGrid.Styles>
-    </TreeDataGrid>
-    
-    <!-- <ItemsControl Items="{Binding Tags}"> -->
-    <!--     <ItemsControl.ItemTemplate> -->
-    <!--         <DataTemplate> -->
-    <!--             <CheckBox Margin="4" -->
-    <!--                       IsChecked="False" -->
-    <!--                       Content="{Binding Name}"/> -->
-    <!--         </DataTemplate> -->
-    <!--     </ItemsControl.ItemTemplate> -->
-    <!-- </ItemsControl> -->
+        <TreeDataGrid Name="categoryViewer" Source="{Binding Source}">
+            <TreeDataGrid.Styles>
+                <Style Selector="TreeDataGrid TreeDataGridRow:nth-child(2n)">
+                    <Setter Property="Background"  Value="#fff8f8f8"/>
+                </Style>
+            </TreeDataGrid.Styles>
+        </TreeDataGrid>
+    </StackPanel>
 </UserControl>

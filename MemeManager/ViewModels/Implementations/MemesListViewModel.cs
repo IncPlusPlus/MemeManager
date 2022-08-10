@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using MemeManager.Persistence;
+using MemeManager.Services.Abstractions;
 using MemeManager.ViewModels.Interfaces;
 using ReactiveUI;
 
@@ -10,7 +11,7 @@ namespace MemeManager.ViewModels.Implementations;
 
 public class MemesListViewModel : ViewModelBase, IMemesListViewModel
 {
-    public MemesListViewModel()
+    public MemesListViewModel(IFilterObserverService filterObserverService)
     {
         RxApp.MainThreadScheduler.Schedule(LoadMemes);
     }
