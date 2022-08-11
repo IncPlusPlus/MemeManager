@@ -1,7 +1,4 @@
-﻿using System.IO;
-using MemeManager.Services.Environment.Enums;
-using MemeManager.Services.Environment.Interfaces;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Extensions.Logging;
 using Splat;
@@ -23,5 +20,9 @@ public static class LoggingBootstrapper
 
             return factory.CreateLogger("Default");
         });
+        /*
+         * TODO: In the future, we could fetch the log instance in a much easier way and access shorter
+         * method names than what MSoft.Extensions.Logging provides. https://www.reactiveui.net/docs/handbook/logging/
+         */
     }
 }

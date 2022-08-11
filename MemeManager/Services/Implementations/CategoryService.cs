@@ -24,7 +24,15 @@ public class CategoryService : ICategoryService
 
     public IEnumerable<Category> GetTopLevelCategories()
     {
-        return _context.Categories.Include(c => c.Children).Where(category => category.Parent == null).ToList();
+        return _context.Categories
+            /*
+             * Loading just the categories is a simple operation and we don't want to pepper the DB with queries
+             * when we want to expand a bunch of categories so we explicitly/eagerly load the children of the
+             * categories.
+             * See https://docs.microsoft.com/en-us/ef/core/querying/related-data/ for more info
+             */
+            .Include(c => c.Children)
+            .Where(category => category.Parent == null).ToList();
     }
 
     public Category? GetById(int id)

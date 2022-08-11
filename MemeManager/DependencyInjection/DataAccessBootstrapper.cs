@@ -1,10 +1,6 @@
-﻿using System;
-using System.IO;
-using MemeManager.Persistence;
+﻿using MemeManager.Persistence;
 using MemeManager.Services.Abstractions;
 using MemeManager.Services.Implementations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Splat;
 
 namespace MemeManager.DependencyInjection;
@@ -14,7 +10,7 @@ public class DataAccessBootstrapper
     public static void RegisterDataAccess(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
         // RegisterDatabaseConnectionOptions(services);
-        RegisterServices(services,resolver);
+        RegisterServices(services, resolver);
     }
 
     // private static void RegisterDatabaseConnectionOptions(IMutableDependencyResolver services)
@@ -33,5 +29,6 @@ public class DataAccessBootstrapper
     private static void RegisterServices(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
         services.RegisterLazySingleton<ICategoryService>(() => new CategoryService(new MemeManagerContext()));
+        services.RegisterLazySingleton<IMemeService>(() => new MemeService(new MemeManagerContext()));
     }
 }

@@ -1,9 +1,7 @@
-﻿using MemeManager.Persistence;
-using MemeManager.Services.Abstractions;
+﻿using MemeManager.Services.Abstractions;
 using MemeManager.Services.Implementations;
 using MemeManager.ViewModels.Implementations;
 using MemeManager.ViewModels.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Splat;
 
 namespace MemeManager.DependencyInjection;
@@ -25,8 +23,10 @@ public static class ViewModelsBootstrapper
     private static void RegisterServices(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
         var filtersObserver = resolver.GetRequiredService<IFilterObserverService>();
-        services.RegisterLazySingleton<ICategoriesListViewModel>(() => new CategoriesListViewModel(filtersObserver,resolver.GetRequiredService<ICategoryService>()));
-        services.RegisterLazySingleton<IMemesListViewModel>(() => new MemesListViewModel(filtersObserver));
+        services.RegisterLazySingleton<ICategoriesListViewModel>(() =>
+            new CategoriesListViewModel(filtersObserver, resolver.GetRequiredService<ICategoryService>()));
+        services.RegisterLazySingleton<IMemesListViewModel>(() =>
+            new MemesListViewModel(filtersObserver, resolver.GetRequiredService<IMemeService>()));
         services.RegisterLazySingleton<IMainWindowViewModel>(() => new MainWindowViewModel(
             resolver.GetRequiredService<ICategoriesListViewModel>(),
             resolver.GetRequiredService<IMemesListViewModel>()
