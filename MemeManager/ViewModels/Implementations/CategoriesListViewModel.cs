@@ -53,7 +53,7 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
             {
                 new HierarchicalExpanderColumn<CategoryTreeNodeModel>(
                     new TemplateColumn<CategoryTreeNodeModel>(
-                        "Categories",
+                        "Category",
                         new FuncDataTemplate<CategoryTreeNodeModel>(FileNameTemplate, true),
                         new GridLength(1, GridUnitType.Star),
                         new ColumnOptions<CategoryTreeNodeModel>
