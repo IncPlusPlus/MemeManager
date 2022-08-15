@@ -1,0 +1,25 @@
+﻿name: Build
+on: 
+  push:
+  pull_request:
+    types: [synchronize, opened]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v2
+
+      - name: Show dotnet info 
+        run: dotnet --info
+
+      - name: Restore dotnet tools
+        uses: xt0rted/dotnet-tool-restore@v1
+
+      - name: Add dotnet-format problem matcher
+        uses: xt0rted/dotnet-format-problem-matcher@v1
+
+      - run: dotnet format --verify-no-changes
+
+      - name: Attempt to build project
+        run: dotnet build
