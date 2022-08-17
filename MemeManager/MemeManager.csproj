@@ -1,12 +1,46 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
-    <Nullable>enable</Nullable>
-	<!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
-	<TrimMode>copyused</TrimMode>
-	<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
+        <TrimMode>copyused</TrimMode>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    </PropertyGroup>
+
+    <!-- Set these properties only when using the Release configuration specified with -c Release on the CLI -->
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <!-- Exclude the .pdb file when publishing https://stackoverflow.com/a/71476843/1687436 -->
+        <DebugSymbols>False</DebugSymbols>
+        <DebugType>None</DebugType>
+        <!-- Publish as a single binary https://docs.microsoft.com/en-us/dotnet/core/deploying/single-file/overview -->
+        <PublishSingleFile>true</PublishSingleFile>
+        <!-- Includes the DLLs that Avalonia needs https://github.com/AvaloniaUI/Avalonia/issues/5254 -->
+        <!-- TODO: This doesn't work when publishing for osx. Investigate. -->
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <SelfContained>true</SelfContained>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Version Condition="'$(RELEASE_VERSION)' != ''">$(RELEASE_VERSION)</Version>
+        <VersionPrefix Condition="'$(RELEASE_VERSION)' == ''">0.0.1</VersionPrefix>
+        <VersionSuffix Condition="'$(RELEASE_VERSION)' == ''">$([System.DateTime]::UtcNow.ToString(`yyyyMMdd-HHmm`))</VersionSuffix>
+        <FileVersion Condition="'$(RELEASE_VERSION)' != ''">$(RELEASE_VERSION)</FileVersion>
+        <FileVersion Condition="'$(RELEASE_VERSION)' == ''">0.0.1-$([System.DateTime]::UtcNow.ToString(`yyyyMMdd-HHmm`))</FileVersion>
+        <!-- Add the version number to the output file name https://stackoverflow.com/a/72551917/1687436 -->
+        <!-- For some reason, this will make dotnet tarball output MemeManager-1.0.1.1.0.1.linux-x64.tar.gz instead of MemeManager.1.0.1.linux-x64.tar.gz -->
+        <!--        <AssemblyName>$(MSBuildProjectName)-$(AssemblyVersion)</AssemblyName>-->
+        <ProductVersion Condition="'$(RELEASE_VERSION)' != ''">$(RELEASE_VERSION)</ProductVersion>
+        <ProductVersion Condition="'$(RELEASE_VERSION)' == ''">0.0.1-$([System.DateTime]::UtcNow.ToString(`yyyyMMdd-HHmm`))</ProductVersion>
+        <AssemblyTitle>Meme Manager</AssemblyTitle>
+        <RepositoryUrl>https://github.com/IncPlusPlus/MemeManager.git</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageProjectUrl>https://github.com/IncPlusPlus/MemeManager</PackageProjectUrl>
+        <Authors>Ryan Cloherty</Authors>
+        <Company>IncPlusPlus</Company>
+        <Product>Meme Manager</Product>
+    </PropertyGroup>
 
   <ItemGroup>
     <Content Include="appsettings.yaml">
@@ -16,24 +50,24 @@
   
   <ItemGroup>
     <Folder Include="Configuration" />
-    <Folder Include="Models\" />
-    <AvaloniaResource Include="Assets\**" />
-    <Folder Include="Views\Dialogs" />
-    <None Remove=".gitignore" />
-  </ItemGroup>
-  <ItemGroup>
-	<!--This helps with theme dll-s trimming.
-	If you will publish your application in self-contained mode with p:PublishTrimmed=true and it will use Fluent theme Default theme will be trimmed from the output and vice versa.
-	https://github.com/AvaloniaUI/Avalonia/issues/5593 -->
-	<TrimmableAssembly Include="Avalonia.Themes.Fluent" />
-	<TrimmableAssembly Include="Avalonia.Themes.Default" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="0.10.16" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.10.16" />
-    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="0.10.16" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.16" />
+        <Folder Include="Models\"/>
+        <AvaloniaResource Include="Assets\**"/>
+        <Folder Include="Views\Dialogs" />
+    <None Remove=".gitignore"/>
+    </ItemGroup>
+    <ItemGroup>
+        <!--This helps with theme dll-s trimming.
+        If you will publish your application in self-contained mode with p:PublishTrimmed=true and it will use Fluent theme Default theme will be trimmed from the output and vice versa.
+        https://github.com/AvaloniaUI/Avalonia/issues/5593 -->
+        <TrimmableAssembly Include="Avalonia.Themes.Fluent"/>
+        <TrimmableAssembly Include="Avalonia.Themes.Default"/>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="0.10.16"/>
+        <PackageReference Include="Avalonia.Desktop" Version="0.10.16"/>
+        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="0.10.16"/>
+        <PackageReference Include="Avalonia.ReactiveUI" Version="0.10.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.7">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

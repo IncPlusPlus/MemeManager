@@ -1,0 +1,36 @@
+﻿{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "dotnet-format": {
+      "version": "5.1.250801",
+      "commands": [
+        "dotnet-format"
+      ]
+    },
+    "netsparkleupdater.tools.appcastgenerator": {
+      "version": "2.1.1",
+      "commands": [
+        "netsparkle-generate-appcast"
+      ]
+    },
+    "dotnet-tarball": {
+      "version": "0.1.220",
+      "commands": [
+        "dotnet-tarball"
+      ]
+    },
+    "dotnet-rpm": {
+      "version": "0.1.220",
+      "commands": [
+        "dotnet-rpm"
+      ]
+    },
+    "dotnet-deb": {
+      "version": "0.1.220",
+      "commands": [
+        "dotnet-deb"
+      ]
+    }
+  }
+}
