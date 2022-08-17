@@ -2,34 +2,34 @@
 using System.IO;
 using MemeManager.Persistence.Entity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
 
 namespace MemeManager.Persistence;
 
 public sealed class MemeManagerContext : DbContext
 {
+    public MemeManagerContext()
+    {
+        // https://stackoverflow.com/a/50042017/1687436
+        // Console.WriteLine("New database created: "+ Database.EnsureCreated());
+
+        var path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData,
+            Environment.SpecialFolderOption.DoNotVerify);
+        // Ensure the directory and all its parents exist.
+        Directory.CreateDirectory(path);
+        DbPath = System.IO.Path.Join(path, "MemeManager.db");
+    }
+
     public DbSet<Meme> Memes { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<Category> Categories { get; set; }
 
     public string DbPath { get; }
 
-    public MemeManagerContext()
-    {
-        // https://stackoverflow.com/a/50042017/1687436
-        // Console.WriteLine("New database created: "+ Database.EnsureCreated());
-        
-        var path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.DoNotVerify);
-        // Ensure the directory and all its parents exist.
-        Directory.CreateDirectory(path);
-        DbPath = System.IO.Path.Join(path, "MemeManager.db");
-    }
-
     // The following configures EF to create a Sqlite database file in the
     // special "local" folder for your platform.
     protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options
-                // See https://docs.microsoft.com/en-us/ef/core/querying/related-data/lazy
+            // See https://docs.microsoft.com/en-us/ef/core/querying/related-data/lazy
             .UseLazyLoadingProxies()
             .UseSqlite($"Data Source={DbPath}");
 }

@@ -13,6 +13,7 @@ namespace MemeManager
     class Program
     {
         private const int TimeoutSeconds = 3;
+
         // Initialization code. Don't use any Avalonia, third-party APIs or any
         // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
         // yet and stuff might break.
@@ -30,7 +31,7 @@ namespace MemeManager
 
                 SubscribeToDomainUnhandledEvents();
                 RegisterDependencies();
-                
+
                 var logger = Locator.Current.GetRequiredService<ILogger>();
                 logger.LogInformation("MemeManager starting up!");
 
@@ -42,16 +43,16 @@ namespace MemeManager
                 mutex.ReleaseMutex();
             }
         }
-        
+
         private static void SubscribeToDomainUnhandledEvents() =>
             AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
             {
                 var logger = Locator.Current.GetRequiredService<ILogger>();
-                var ex = (Exception) args.ExceptionObject;
+                var ex = (Exception)args.ExceptionObject;
 
                 logger.LogCritical($"Unhandled application error: {ex}");
             };
-        
+
         private static void RegisterDependencies() =>
             Bootstrapper.Register(Locator.CurrentMutable, Locator.Current);
 

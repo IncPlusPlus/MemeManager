@@ -1,21 +1,22 @@
 ﻿using MemeManager.Services;
 using MemeManager.ViewModels.Interfaces;
-using ReactiveUI;
 
 namespace MemeManager.ViewModels.Implementations
 {
     public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
     {
-        private Database db= new Database();
-        public ICategoriesListViewModel CategoriesListViewModel { get; }
-        public IMemesListViewModel MemesListViewModel { get; }
+        private Database db = new Database();
 
-        public MainWindowViewModel(ICategoriesListViewModel categoriesListViewModel, IMemesListViewModel memesListViewModel)
+        public MainWindowViewModel(ICategoriesListViewModel categoriesListViewModel,
+            IMemesListViewModel memesListViewModel)
         {
             CategoriesListViewModel = categoriesListViewModel;
             MemesListViewModel = memesListViewModel;
         }
-        
+
+        public ICategoriesListViewModel CategoriesListViewModel { get; }
+        public IMemesListViewModel MemesListViewModel { get; }
+
         public MemesListViewModel List { get; }
     }
 }

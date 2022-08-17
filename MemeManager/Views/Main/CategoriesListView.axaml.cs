@@ -13,5 +13,5 @@ public partial class CategoriesListView : UserControl
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
-    }    
+    }
 }

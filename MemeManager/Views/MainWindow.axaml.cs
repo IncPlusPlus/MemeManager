@@ -13,7 +13,7 @@ namespace MemeManager.Views
             this.AttachDevTools();
 #endif
         }
-        
+
         private void InitializeComponent()
         {
             AvaloniaXamlLoader.Load(this);

@@ -5,13 +5,13 @@ namespace MemeManager.Views.Main;
 
 public partial class MemeListView : UserControl
 {
-public MemeListView()
-        {
-            this.InitializeComponent();
-        }
+    public MemeListView()
+    {
+        this.InitializeComponent();
+    }
 
-        private void InitializeComponent()
-        {
-            AvaloniaXamlLoader.Load(this);
-        }    
+    private void InitializeComponent()
+    {
+        AvaloniaXamlLoader.Load(this);
+    }
 }

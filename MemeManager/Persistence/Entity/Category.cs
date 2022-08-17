@@ -10,6 +10,6 @@ public class Category
     public virtual Category? Parent { get; set; }
     public virtual ICollection<Category> Children { get; set; }
     public virtual ICollection<Meme> Memes { get; set; }
-    
+
     // TODO: Add a toString method that outputs ParentCategory/SubCategory/ThisCategory instead of just ThisCategory
 }

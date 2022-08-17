@@ -1,8 +1,5 @@
-﻿using ReactiveUI;
-
-namespace MemeManager.ViewModels.Interfaces;
+﻿namespace MemeManager.ViewModels.Interfaces;
 
 public interface ICategoriesListViewModel
 {
-    
 }
