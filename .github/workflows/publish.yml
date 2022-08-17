@@ -76,7 +76,7 @@ jobs:
       - name: Add dotnet-format problem matcher
         uses: xt0rted/dotnet-format-problem-matcher@v1
 
-      - run: dotnet format --verify-no-changes
+      - run: dotnet format MemeManager --verify-no-changes
 
 #      - run:  dotnet publish -c Release -r win-x64
 #      - run:  dotnet publish -c Release -r linux-x64
