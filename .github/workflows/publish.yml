@@ -11,7 +11,7 @@ jobs:
       versionNumber: ${{ steps.version.outputs.content }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Fetch all history for all tags and branches
         run: |
@@ -60,7 +60,9 @@ jobs:
       RELEASE_VERSION: ${{needs.version.outputs.versionNumber}}
     steps:
       - name: Check out repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+        with:
+          submodules: true
 
       - name: Show dotnet info
         run: dotnet --info
@@ -101,8 +103,9 @@ jobs:
       # For use with https://stackoverflow.com/a/60364278/1687436
       RELEASE_VERSION: ${{needs.version.outputs.versionNumber}}
     steps:
+      # TODO: This step might not be necessary
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get Windows artifact
         uses: actions/download-artifact@v2
