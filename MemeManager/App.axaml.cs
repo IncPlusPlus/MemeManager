@@ -40,7 +40,8 @@ namespace MemeManager
         {
             var handler = ShuttingDown;
             handler?.Invoke(this, e);
-            if (_lifetime != null) _lifetime.Exit -= OnExit;
+            if (_lifetime != null)
+                _lifetime.Exit -= OnExit;
         }
     }
 }
