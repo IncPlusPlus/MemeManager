@@ -35,11 +35,11 @@
     <DockPanel>
         <main:SearchbarView DataContext="{Binding SearchbarViewModel}" DockPanel.Dock="Top" />
         <Grid>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+            <!-- <Grid.RowDefinitions> -->
+            <!--     <RowDefinition Height="Auto" /> -->
+            <!--     <RowDefinition Height="*" /> -->
+            <!--     <RowDefinition Height="Auto" /> -->
+            <!-- </Grid.RowDefinitions> -->
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" />
                 <ColumnDefinition Width="Auto" />
