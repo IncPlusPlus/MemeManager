@@ -90,7 +90,6 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
          * TODO: This could be optimized to not have a .ToList call followed by another iteration by returning the
          * IQueryable<Meme> instance instead of the List
          */
-        var filteredResults1 = _memeService.GetFiltered(searchTerms.category, searchTerms.searchString);
         var filteredResults = await _memeService.GetFilteredAsync(searchTerms.category, searchTerms.searchString, token).ConfigureAwait(false);
         _logger.LogDebug("Finished search for category {CategoryName}", searchTerms.category?.Name);
         return filteredResults.Select(x => new FileViewModel(x));
