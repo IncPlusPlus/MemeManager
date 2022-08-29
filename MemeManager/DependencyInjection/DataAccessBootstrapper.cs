@@ -30,8 +30,8 @@ public class DataAccessBootstrapper
 
     private static void RegisterServices(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
-        services.RegisterLazySingleton<ICategoryService>(() => new CategoryService(new MemeManagerContext(),resolver.GetRequiredService<ILogger>()));
-        services.RegisterLazySingleton<IMemeService>(() => new MemeService(new MemeManagerContext(),resolver.GetRequiredService<ILogger>() ));
+        services.RegisterLazySingleton<ICategoryService>(() => new CategoryService(new MemeManagerContext(), resolver.GetRequiredService<ILogger>()));
+        services.RegisterLazySingleton<IMemeService>(() => new MemeService(new MemeManagerContext(), resolver.GetRequiredService<ILogger>()));
         services.RegisterConstant<ILifecycleService>(new LifecycleService(resolver.GetRequiredService<ILogger>(), resolver.GetRequiredService<MemesConfiguration>(), resolver.GetRequiredService<LayoutConfiguration>()));
     }
 }
