@@ -11,10 +11,16 @@ public static class LoggingBootstrapper
     {
         services.RegisterLazySingleton(() =>
         {
-            var serilogConfig = resolver.GetRequiredService<IConfiguration>();
+            var globalConfig = resolver.GetRequiredService<IConfiguration>();
             var logger = new LoggerConfiguration()
+                /*
+                 * This is needed because the actual "Serilog" key needs to be present for LoggerConfiguration.ReadFrom
+                 * .Configuration(serilogConfig).CreateLogger() to work properly. I can't just use configuration.GetRequiredSection.
+                 * The method below that does get that section is purely for keeping it in memory as a POCO so that it can be
+                 * written back to the config YAML when we want to save the config values.
+                 */
                 // https://github.com/serilog/serilog-sinks-file#json-appsettingsjson-configuration
-                .ReadFrom.Configuration(serilogConfig)
+                .ReadFrom.Configuration(globalConfig)
                 .CreateLogger();
             var factory = new SerilogLoggerFactory(logger);
 

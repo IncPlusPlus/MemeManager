@@ -33,6 +33,7 @@ public class Meme
     public virtual ICollection<Tag> Tags { get; set; }
 
     public virtual Category? Category { get; set; }
+    // TODO: Change AdditionalTerms to Keywords
     public string AdditionalTerms { get; set; }
     public FileMediaType MediaType { get; set; }
 

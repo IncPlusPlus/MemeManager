@@ -21,3 +21,5 @@ About:
     - IncPlusPlus
 Memes:
   MemesFolder: C:\Users\Ryan Cloherty\Downloads\MyMemes
+Layout:
+  LeftPanelWidth: "*"

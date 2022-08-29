@@ -34,6 +34,7 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
     // that will notify Observers, as well as WPF/Avalonia, that a property has 
     // changed. If we declared this as a normal property, we couldn't tell when it has changed!
     private Category? _category;
+    private string? _searchString;
     private IFilterObserverService _filterObserver;
     private ILogger _logger;
     private IMemeService _memeService;
@@ -50,7 +51,7 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
             // Might need to be WhenAny to allow for null values
             // Should be able to just add more properties like tags and keywords
             // Be sure to do .Select(term => term?.Trim()) for keywords
-            .WhenAnyValue(x => x.CurrentCategory)
+            .WhenAnyValue(x => x.CurrentCategory, x => x.CurrentSearchString)
             .Throttle(TimeSpan.FromMilliseconds(50))
             .DistinctUntilChanged()
             .SelectMany(SearchMemes)
@@ -73,18 +74,25 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
         set => this.RaiseAndSetIfChanged(ref _category, value);
     }
 
+    public string? CurrentSearchString
+    {
+        get => _searchString;
+        set => this.RaiseAndSetIfChanged(ref _searchString, value);
+    }
+
     public IEnumerable<FileViewModel> SearchResults => _searchResults.Value;
     public bool IsAvailable => _isAvailable.Value;
 
     // https://www.reactiveui.net/docs/getting-started/compelling-example
-    private async Task<IEnumerable<FileViewModel>> SearchMemes(Category? category, CancellationToken token)
+    private async Task<IEnumerable<FileViewModel>> SearchMemes((Category? category, string? searchString) searchTerms, CancellationToken token)
     {
         /*
          * TODO: This could be optimized to not have a .ToList call followed by another iteration by returning the
          * IQueryable<Meme> instance instead of the List
          */
-        var filteredResults = await _memeService.GetFilteredAsync(category, token).ConfigureAwait(false);
-        _logger.LogDebug("Finished search for category {CategoryName}", category?.Name);
+        var filteredResults1 = _memeService.GetFiltered(searchTerms.category, searchTerms.searchString);
+        var filteredResults = await _memeService.GetFilteredAsync(searchTerms.category, searchTerms.searchString, token).ConfigureAwait(false);
+        _logger.LogDebug("Finished search for category {CategoryName}", searchTerms.category?.Name);
         return filteredResults.Select(x => new FileViewModel(x));
     }
 
@@ -94,6 +102,12 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
         {
             _logger.LogDebug("Category changed to {CategoryName}", _filterObserver.CurrentCategory?.Name);
             CurrentCategory = _filterObserver.CurrentCategory;
+        };
+
+        _filterObserver.CurrentSearchTermsChanged += (_, _) =>
+        {
+            _logger.LogDebug("Search terms: {Terms}", _filterObserver.CurrentSearchTerms);
+            CurrentSearchString = _filterObserver.CurrentSearchTerms;
         };
     }
 }

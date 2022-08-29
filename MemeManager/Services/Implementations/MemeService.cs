@@ -2,24 +2,25 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MemeManager.DependencyInjection;
+using MemeManager.Extensions;
 using MemeManager.Persistence;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Splat;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
+using NinjaNye.SearchExtensions;
 
 namespace MemeManager.Services.Implementations;
 
 public class MemeService : IMemeService
 {
     private readonly MemeManagerContext _context;
+    private readonly ILogger _log;
 
-    public MemeService(MemeManagerContext context)
+    public MemeService(MemeManagerContext context, ILogger logger)
     {
         _context = context;
+        _log = logger;
     }
 
     public IEnumerable<Meme> GetAll()
@@ -27,14 +28,14 @@ public class MemeService : IMemeService
         return _context.Memes.AsNoTracking().ToList();
     }
 
-    public IEnumerable<Meme> GetFiltered(Category? category)
+    public IEnumerable<Meme> GetFiltered(Category? category, string? searchTerms)
     {
-        return GetFilteredInternal(category).ToList();
+        return GetFilteredInternal(category, searchTerms).ToList();
     }
 
-    public Task<List<Meme>> GetFilteredAsync(Category? category, CancellationToken token)
+    public Task<List<Meme>> GetFilteredAsync(Category? category, string? searchTerms, CancellationToken token)
     {
-        return GetFilteredInternal(category).ToListAsync(token);
+        return GetFilteredInternal(category, searchTerms).ToListAsync(token);
     }
 
     public Meme? GetById(int id)
@@ -55,12 +56,27 @@ public class MemeService : IMemeService
         return existingMeme != null ? _context.Memes.Remove(existingMeme).Entity : null;
     }
 
-    private IQueryable<Meme> GetFilteredInternal(Category? category)
+    private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)
     {
-        var logger = Locator.Current.GetRequiredService<ILogger>();
-        logger.LogDebug("Starting search for category {CategoryName}...", category?.Name);
-        return _context.Memes
+        _log.LogDebug("Starting search for category {CategoryName}...", category?.Name);
+        var query = _context.Memes
             // Return all memes if the category is null. Otherwise, filter by the category.
             .Where(meme => category == null || meme.Category == category);
+        if (searchTerms != null && searchTerms.Length > 0)
+        {
+            query = query
+                // Currently this is case sensitive https://github.com/ninjanye/SearchExtensions/issues/42
+                .Search(
+                    x => x.AdditionalTerms
+                    // ,
+                    // TODO: This seems to select all memes. It needs to select all tags that contain the search string.
+                    // x => x.Tags.Select(t => t.Name).Aggregate((s1, s2) => $"{s1} {s2}")
+                    )
+                .Containing(searchTerms?.Split(' '))
+                // Call this function last to help with compatability issue https://github.com/ninjanye/SearchExtensions/issues/40
+                .Apply();
+        }
+
+        return query;
     }
 }

@@ -4,16 +4,19 @@ using MemeManager.Persistence;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace MemeManager.Services.Implementations;
 
 public class CategoryService : ICategoryService
 {
     private readonly MemeManagerContext _context;
+    private readonly ILogger _log;
 
-    public CategoryService(MemeManagerContext context)
+    public CategoryService(MemeManagerContext context, ILogger logger)
     {
         _context = context;
+        _log = logger;
     }
 
 

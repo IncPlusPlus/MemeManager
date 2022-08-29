@@ -9,9 +9,8 @@ public interface IMemeService
 {
     IEnumerable<Meme> GetAll();
 
-    // TODO: Expand this to tags and keywords
-    IEnumerable<Meme> GetFiltered(Category? category);
-    Task<List<Meme>> GetFilteredAsync(Category? category, CancellationToken token);
+    IEnumerable<Meme> GetFiltered(Category? category, string? searchTerms);
+    Task<List<Meme>> GetFilteredAsync(Category? category, string? searchTerms, CancellationToken token);
 
     Meme? GetById(int id);
 

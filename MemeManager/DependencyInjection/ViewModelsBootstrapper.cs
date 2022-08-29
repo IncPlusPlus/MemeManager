@@ -1,5 +1,6 @@
 ﻿using MemeManager.Services.Abstractions;
 using MemeManager.Services.Implementations;
+using MemeManager.ViewModels.Configuration;
 using MemeManager.ViewModels.Implementations;
 using MemeManager.ViewModels.Interfaces;
 using Splat;
@@ -23,13 +24,17 @@ public static class ViewModelsBootstrapper
     private static void RegisterServices(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
         var filtersObserver = resolver.GetRequiredService<IFilterObserverService>();
+        services.RegisterLazySingleton<ISearchbarViewModel>(() =>
+            new SearchbarViewModel(filtersObserver));
         services.RegisterLazySingleton<ICategoriesListViewModel>(() =>
             new CategoriesListViewModel(filtersObserver, resolver.GetRequiredService<ICategoryService>()));
         services.RegisterLazySingleton<IMemesListViewModel>(() =>
             new MemesListViewModel(filtersObserver, resolver.GetRequiredService<IMemeService>()));
         services.RegisterLazySingleton<IMainWindowViewModel>(() => new MainWindowViewModel(
+            resolver.GetRequiredService<ISearchbarViewModel>(),
             resolver.GetRequiredService<ICategoriesListViewModel>(),
-            resolver.GetRequiredService<IMemesListViewModel>()
+            resolver.GetRequiredService<IMemesListViewModel>(),
+            resolver.GetRequiredService<LayoutConfiguration>()
         ));
     }
 
