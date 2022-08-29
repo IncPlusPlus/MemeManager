@@ -49,7 +49,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <AvaloniaVersion>0.10.16</AvaloniaVersion>
+    <AvaloniaVersion>0.10.18</AvaloniaVersion>
     <EntityFrameworkVersion>6.0.8</EntityFrameworkVersion>
     <MicrosoftExtensionsConfigurationVersion>6.0.0</MicrosoftExtensionsConfigurationVersion>
   </PropertyGroup>
