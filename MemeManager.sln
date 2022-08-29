@@ -5,6 +5,8 @@ VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MemeManager", "MemeManager\MemeManager.csproj", "{16CD5684-4D69-40A5-BEF6-61E1911C9CD5}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Avalonia.Controls.TreeDataGrid", "Dependencies\Avalonia.Controls.TreeDataGrid\src\Avalonia.Controls.TreeDataGrid\Avalonia.Controls.TreeDataGrid.csproj", "{4CFFB583-9111-4B6B-B1A5-65DE0E5E5E23}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{16CD5684-4D69-40A5-BEF6-61E1911C9CD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{16CD5684-4D69-40A5-BEF6-61E1911C9CD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{16CD5684-4D69-40A5-BEF6-61E1911C9CD5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4CFFB583-9111-4B6B-B1A5-65DE0E5E5E23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4CFFB583-9111-4B6B-B1A5-65DE0E5E5E23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4CFFB583-9111-4B6B-B1A5-65DE0E5E5E23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4CFFB583-9111-4B6B-B1A5-65DE0E5E5E23}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

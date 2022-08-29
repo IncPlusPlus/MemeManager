@@ -1,17 +1,66 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:MemeManager.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:main="clr-namespace:MemeManager.Views.Main"
+        xmlns:implementations="clr-namespace:MemeManager.ViewModels.Implementations"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="MemeManager.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="MemeManager">
-
     <Design.DataContext>
-        <vm:MainWindowViewModel/>
+        <implementations:MainWindowViewModel />
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <!-- TODO: Look into the <Window.KeyBindings> tag as seen in Camelot's MainWindow.xaml -->
 
+    <!-- Similar setup to Jaya's MainView.xaml -->
+    <!-- <DockPanel> -->
+    <!--     <main:SearchbarView DataContext="{Binding SearchBarViewModel}" DockPanel.Dock="Top"/> -->
+    <!--     <Grid> -->
+    <!--         <Grid.ColumnDefinitions> -->
+    <!--             <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" /> -->
+    <!--             <ColumnDefinition Width="Auto" /> -->
+    <!--             <ColumnDefinition Width="*" /> -->
+    <!--             ~1~ <ColumnDefinition Width="Auto" /> @1@ -->
+    <!--             ~1~ <ColumnDefinition Width="{Binding $parent[DockPanel].DataContext.PaneConfig.PreviewOrDetailsPanePaneWidth, Mode=OneWay}" /> @1@ -->
+    <!--         </Grid.ColumnDefinitions> -->
+    <!--         <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" /> -->
+    <!--         <GridSplitter Grid.Column="1" ShowsPreview="False" -->
+    <!--                       HorizontalAlignment="Stretch" /> -->
+    <!--         <main:MemeListView Grid.Column="2" DataContext="{Binding MemesListViewModel}" /> -->
+    <!--         </Grid> -->
+    <!-- </DockPanel> -->
+
+    <DockPanel>
+        <main:SearchbarView DataContext="{Binding SearchbarViewModel}" DockPanel.Dock="Top" />
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="4*" />
+            </Grid.ColumnDefinitions>
+            <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" />
+            <GridSplitter Grid.Row="0" Grid.Column="1" ShowsPreview="False"
+                          HorizontalAlignment="Stretch" />
+            <main:MemeListView Grid.Row="0" Grid.Column="2" DataContext="{Binding MemesListViewModel}" />
+        </Grid>
+    </DockPanel>
+
+    <!-- <Grid RowDefinitions="35,Auto,*,Auto"> -->
+    <!--     <Grid> -->
+    <!--         <main:SearchbarView DataContext="{Binding SearchbarViewModel}"></main:SearchbarView> -->
+    <!--     </Grid> -->
+    <!--     <Grid Grid.Row="2" ColumnDefinitions="*,Auto,4*"> -->
+    <!--         <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" /> -->
+    <!--         <GridSplitter Grid.Column="1" ShowsPreview="False" -->
+    <!--                       HorizontalAlignment="Stretch" /> -->
+    <!--         <main:MemeListView Grid.Column="2" DataContext="{Binding MemesListViewModel}" /> -->
+    <!--     </Grid> -->
+    <!-- </Grid> -->
 </Window>

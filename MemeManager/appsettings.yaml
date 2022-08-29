@@ -1,0 +1,25 @@
+﻿Serilog:
+  Using:
+    - Serilog.Sinks.Console
+    - Serilog.Sinks.File
+  MinimumLevel:
+    Default: Debug
+    Override:
+      Microsoft: Warning
+      System: Warning
+  WriteTo:
+    - Name: Console
+    - Name: File
+      Args:
+        # TODO: Might be worth looking into flush performance https://github.com/serilog/serilog-sinks-file#performance
+        path: Logs/log.txt
+        # Only the most recent 31 files are kept. See https://github.com/serilog/serilog-sinks-file#getting-started
+        rollingInterval: Day
+About:
+  RepositoryUrl: https://github.com/IncPlusPlus/MemeManager
+  Maintainers:
+    - IncPlusPlus
+Memes:
+  MemesFolder: C:\Users\Ryan Cloherty\Downloads\MyMemes
+Layout:
+  LeftPanelWidth: "*"

@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="300"
+             x:Class="MemeManager.Views.Main.MemeListView"
+             xmlns:local="using:MemeManager.Views"
+             xmlns:implementations="clr-namespace:MemeManager.ViewModels.Implementations">
+    <Design.DataContext>
+        <implementations:MemesListViewModel/>
+    </Design.DataContext>
+    <!-- https://github.com/AvaloniaUI/Avalonia/discussions/5517#discussion-3228287 for grid-like stuff -->
+    <ListBox Items="{Binding SearchResults, Mode=OneWay}" >
+        <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+                <WrapPanel Width="{Binding $parent[ScrollContentPresenter].Bounds.Width, Mode=OneWay}"/>
+            </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <local:FileView Margin="0 0 20 20" />
+                <!-- <StackPanel Orientation="Horizontal"> -->
+                <!--     <TextBlock Text="{Binding Id, Mode=TwoWay}"></TextBlock> -->
+                <!--     <TextBlock Text="{Binding Name, Mode=OneWay}" Margin="5,0,0,0" ></TextBlock> -->
+                <!-- </StackPanel> -->
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
+    <!-- <DockPanel> -->
+    <!--     ~1~ <Button DockPanel.Dock="Bottom" @1@ -->
+    <!--     ~1~         Command="{Binding $parent[Window].DataContext.AddItem}"> @1@ -->
+    <!--     ~1~     Add an item @1@ -->
+    <!--     ~1~ </Button> @1@ -->
+    <!--     <Grid> -->
+    <!--     <DataGrid Items="{Binding Items}"> -->
+    <!--         ~1~ <ItemsControl.ItemTemplate> @1@ -->
+    <!--             <DataTemplate> -->
+    <!--                 <TextBlock Text="{Binding Name}"/> -->
+    <!--             </DataTemplate> -->
+    <!--         ~1~ </ItemsControl.ItemTemplate> @1@ -->
+    <!--     </DataGrid> -->
+    <!--     </Grid> -->
+    <!-- </DockPanel> -->
+</UserControl>
