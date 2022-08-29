@@ -16,7 +16,6 @@ public class SearchbarViewModel : ReactiveObject, ISearchbarViewModel
         _filterObserver = filterObserverService;
 
         this.WhenAnyValue(x => x.SearchText)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
             .Throttle(TimeSpan.FromMilliseconds(400))
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(NotifyObserver!);
