@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Collections;
 using Avalonia.Data.Converters;
 using Avalonia.Media.Imaging;
 using MemeManager.DependencyInjection;
+using MemeManager.Models;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using MemeManager.ViewModels.Interfaces;
@@ -37,13 +40,15 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
     private string? _searchString;
     private IFilterObserverService _filterObserver;
     private ILogger _logger;
-    private IMemeService _memeService;
+    private readonly IMemeService _memeService;
+    private readonly ICategoryService _categoryService;
 
-    public MemesListViewModel(IFilterObserverService filterObserverService, IMemeService memeService)
+    public MemesListViewModel(IFilterObserverService filterObserverService, IMemeService memeService, ICategoryService categoryService)
     {
         _logger = Locator.Current.GetRequiredService<ILogger>();
         _filterObserver = filterObserverService;
         _memeService = memeService;
+        _categoryService = categoryService;
         SubscribeToEvents();
 
         // https://www.reactiveui.net/docs/getting-started/compelling-example
@@ -66,7 +71,18 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
             .WhenAnyValue(x => x.SearchResults)
             .Select(searchResults => searchResults != null)
             .ToProperty(this, x => x.IsAvailable);
+
+        SetCategoryCommand = ReactiveCommand.Create<ChangeCategorySelection>(SetCategory);
     }
+
+    public void SetCategory(ChangeCategorySelection path)
+    {
+        path.SelectedMemes.ForEach(m => _memeService.SetCategory(m, path.SelectedCategory));
+    }
+
+    public List<CategoryTreeNodeModel> Categories => _categoryService.GetTopLevelCategories().Select(x => new CategoryTreeNodeModel(x)).ToList();
+
+    public ReactiveCommand<ChangeCategorySelection, Unit> SetCategoryCommand { get; }
 
     public Category? CurrentCategory
     {
@@ -139,5 +155,28 @@ public class ThumbnailPathToBitmapConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         throw new NotSupportedException();
+    }
+}
+
+public class ChangeCategorySelection
+{
+    public IEnumerable<Meme> SelectedMemes { get; set; } = new List<Meme>();
+    public Category? SelectedCategory { get; set; }
+}
+
+public class ChangeCategorySelectorConverter : IMultiValueConverter
+{
+    public object Convert(IList<object?> values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+    {
+        return new ChangeCategorySelection()
+        {
+            SelectedMemes = ((AvaloniaList<object>?)values[0])?.Select(x => ((FileViewModel)x).Meme) ?? new List<Meme>(),
+            SelectedCategory = ((CategoryTreeNodeModel?)values[1])?.Category,
+        };
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
+    {
+        throw new NotImplementedException();
     }
 }

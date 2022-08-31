@@ -53,7 +53,28 @@ public class MemeService : IMemeService
     public Meme? DeleteById(int id)
     {
         var existingMeme = _context.Memes.SingleOrDefault(m => m.Id == id);
-        return existingMeme != null ? _context.Memes.Remove(existingMeme).Entity : null;
+        try
+        {
+            return existingMeme != null ? _context.Memes.Remove(existingMeme).Entity : null;
+        }
+        finally
+        {
+            _context.SaveChanges();
+        }
+    }
+
+    public Meme SetCategory(Meme meme, Category? category)
+    {
+        try
+        {
+            meme.Category = category;
+            return meme;
+        }
+        finally
+        {
+            // TODO: This fails because of something related to entity tracking
+            _context.SaveChanges();
+        }
     }
 
     private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)

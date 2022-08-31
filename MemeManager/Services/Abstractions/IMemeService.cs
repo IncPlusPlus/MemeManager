@@ -17,4 +17,6 @@ public interface IMemeService
     Meme Create(Meme newMeme);
 
     Meme? DeleteById(int id);
+
+    Meme SetCategory(Meme meme, Category? category);
 }

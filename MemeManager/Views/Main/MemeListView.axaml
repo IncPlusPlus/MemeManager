@@ -9,9 +9,54 @@
     <Design.DataContext>
         <implementations:MemesListViewModel/>
     </Design.DataContext>
+  <UserControl.Resources>
+    <implementations:ChangeCategorySelectorConverter x:Key="SetCategoryConverterHelper"/>
+  </UserControl.Resources>
     <!-- https://github.com/AvaloniaUI/Avalonia/discussions/5517#discussion-3228287 for grid-like stuff -->
-    <ListBox Items="{Binding SearchResults, Mode=OneWay}" >
-        <ListBox.ItemsPanel>
+     <ListBox Items="{Binding SearchResults, Mode=OneWay}" Name="MemesListBox" SelectionMode="Multiple">
+       <ListBox.Styles>
+         <Style Selector="ListBoxItem">
+           <!--Defines a context menu for each ListBoxItem-->
+           <Setter Property="ContextMenu">
+             <Setter.Value>
+               <!-- TODO: Currently only leaf nodes will fire the SetCategoryCommand. See https://github.com/AvaloniaUI/Avalonia/discussions/8871 for progress on this issue -->
+               <ContextMenu DataContext="{Binding $parent[ListBoxItem].DataContext}" Name="ContextMenu">
+               <!-- <ContextMenu DataContext="{Binding PlacementTarget, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBoxItem}}"> -->
+                <MenuItem Header="Set Category" Items="{Binding $parent[UserControl].DataContext.Categories, Mode=OneWay}" Name="SetCategoryButton">
+                  <MenuItem.Styles>
+                    <!-- https://github.com/AvaloniaUI/Avalonia/issues/3100#issuecomment-753452752 -->
+                    <Style Selector="MenuItem > MenuItem">
+                      <!-- TODO: Show checked icon if meme is in this category -->
+                      <!-- <Setter Property="Icon" Value="{Binding Icon}"/> -->
+                      <!-- <Setter Property="Header" Value="{Binding LanguageCode}"/> -->
+                      <Setter Property="Header" Value="{Binding Name}"/>
+                      <Setter Property="Items" Value="{Binding Children}"/>
+                      <Setter Property="Command" Value="{Binding $parent[UserControl].DataContext.SetCategoryCommand}"/>
+                      <!-- <Setter Property="CommandParameter" Value="{Binding}"/> -->
+                      <Setter Property="CommandParameter">
+                        <MultiBinding Converter="{StaticResource SetCategoryConverterHelper}">
+                          <!-- The currently selected memes when the context menu was open -->
+                          <Binding ElementName="MemesListBox" Path="SelectedItems" />
+                          <!-- This is pretty much the same thing as if we had typed <Setter Property="CommandParameter" Value="{Binding}"/> except it's in a MultiBinding -->
+                          <!-- See https://stackoverflow.com/a/15336766/1687436 https://stackoverflow.com/a/67946628/1687436 https://stackoverflow.com/a/28949096/1687436 -->
+                          <Binding/>
+
+                          <!-- Gets the object the ContextMenu was created on -->
+                          <!-- <Binding ElementName="ContextMenu" Path="DataContext"/> -->
+                          <!-- The category that is selected in the Set Category submenu -->
+                          <!-- <Binding ElementName="SetCategoryButton" Path="Selection.SelectedItem"></Binding> -->
+                          <!-- <Binding ElementName="SetCategoryButton" Path="DataContext"></Binding> -->
+                        </MultiBinding>
+                      </Setter>
+                    </Style>
+                  </MenuItem.Styles>
+                </MenuItem>
+              </ContextMenu>
+            </Setter.Value>
+          </Setter>
+        </Style>
+      </ListBox.Styles>
+      <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
                 <WrapPanel Width="{Binding $parent[ScrollContentPresenter].Bounds.Width, Mode=OneWay}"/>
             </ItemsPanelTemplate>
@@ -19,26 +64,7 @@
         <ListBox.ItemTemplate>
             <DataTemplate>
                 <local:FileView Margin="0 0 20 20" />
-                <!-- <StackPanel Orientation="Horizontal"> -->
-                <!--     <TextBlock Text="{Binding Id, Mode=TwoWay}"></TextBlock> -->
-                <!--     <TextBlock Text="{Binding Name, Mode=OneWay}" Margin="5,0,0,0" ></TextBlock> -->
-                <!-- </StackPanel> -->
             </DataTemplate>
         </ListBox.ItemTemplate>
     </ListBox>
-    <!-- <DockPanel> -->
-    <!--     ~1~ <Button DockPanel.Dock="Bottom" @1@ -->
-    <!--     ~1~         Command="{Binding $parent[Window].DataContext.AddItem}"> @1@ -->
-    <!--     ~1~     Add an item @1@ -->
-    <!--     ~1~ </Button> @1@ -->
-    <!--     <Grid> -->
-    <!--     <DataGrid Items="{Binding Items}"> -->
-    <!--         ~1~ <ItemsControl.ItemTemplate> @1@ -->
-    <!--             <DataTemplate> -->
-    <!--                 <TextBlock Text="{Binding Name}"/> -->
-    <!--             </DataTemplate> -->
-    <!--         ~1~ </ItemsControl.ItemTemplate> @1@ -->
-    <!--     </DataGrid> -->
-    <!--     </Grid> -->
-    <!-- </DockPanel> -->
 </UserControl>
