@@ -4,6 +4,7 @@ using MemeManager.ViewModels.Configuration;
 using MemeManager.ViewModels.Implementations;
 using MemeManager.ViewModels.Interfaces;
 using Splat;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace MemeManager.DependencyInjection;
 
@@ -29,7 +30,7 @@ public static class ViewModelsBootstrapper
         services.RegisterLazySingleton<ICategoriesListViewModel>(() =>
             new CategoriesListViewModel(filtersObserver, resolver.GetRequiredService<ICategoryService>()));
         services.RegisterLazySingleton<IMemesListViewModel>(() =>
-            new MemesListViewModel(filtersObserver, resolver.GetRequiredService<IMemeService>(), resolver.GetRequiredService<ICategoryService>()));
+            new MemesListViewModel(resolver.GetRequiredService<ILogger>(), filtersObserver, resolver.GetRequiredService<IMemeService>(), resolver.GetRequiredService<ICategoryService>()));
         services.RegisterLazySingleton<IMainWindowViewModel>(() => new MainWindowViewModel(
             resolver.GetRequiredService<ISearchbarViewModel>(),
             resolver.GetRequiredService<ICategoriesListViewModel>(),

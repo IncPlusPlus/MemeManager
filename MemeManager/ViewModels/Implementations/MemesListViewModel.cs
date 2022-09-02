@@ -10,15 +10,12 @@ using System.Threading.Tasks;
 using Avalonia.Collections;
 using Avalonia.Data.Converters;
 using Avalonia.Media.Imaging;
-using MemeManager.DependencyInjection;
 using MemeManager.Models;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using MemeManager.ViewModels.Interfaces;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
-using Splat;
-using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace MemeManager.ViewModels.Implementations;
 
@@ -43,9 +40,9 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
     private readonly IMemeService _memeService;
     private readonly ICategoryService _categoryService;
 
-    public MemesListViewModel(IFilterObserverService filterObserverService, IMemeService memeService, ICategoryService categoryService)
+    public MemesListViewModel(ILogger logger, IFilterObserverService filterObserverService, IMemeService memeService, ICategoryService categoryService)
     {
-        _logger = Locator.Current.GetRequiredService<ILogger>();
+        _logger = logger;
         _filterObserver = filterObserverService;
         _memeService = memeService;
         _categoryService = categoryService;

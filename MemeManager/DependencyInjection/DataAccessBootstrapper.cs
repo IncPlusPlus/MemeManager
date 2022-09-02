@@ -30,8 +30,12 @@ public class DataAccessBootstrapper
 
     private static void RegisterServices(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
-        services.RegisterLazySingleton<ICategoryService>(() => new CategoryService(new MemeManagerContext(), resolver.GetRequiredService<ILogger>()));
-        services.RegisterLazySingleton<IMemeService>(() => new MemeService(new MemeManagerContext(), resolver.GetRequiredService<ILogger>()));
+        // I know that Entity Framework is supposed to be used in the opposite way to this and have a unique instance per request.
+        // However, that's a pain in the ass and I don't want to do it properly yet. I kept running into https://stackoverflow.com/a/48204159/1687436 when I was making a new MemeManagerContext() for each repository.
+        // This is absolutely NOT how Entity Framework should be used. See https://docs.microsoft.com/en-us/ef/core/dbcontext-configuration/#the-dbcontext-lifetime
+        var dbContext = new MemeManagerContext();
+        services.RegisterLazySingleton<ICategoryService>(() => new CategoryService(dbContext, resolver.GetRequiredService<ILogger>()));
+        services.RegisterLazySingleton<IMemeService>(() => new MemeService(dbContext, resolver.GetRequiredService<ILogger>()));
         services.RegisterConstant<ILifecycleService>(new LifecycleService(resolver.GetRequiredService<ILogger>(), resolver.GetRequiredService<MemesConfiguration>(), resolver.GetRequiredService<LayoutConfiguration>()));
     }
 }

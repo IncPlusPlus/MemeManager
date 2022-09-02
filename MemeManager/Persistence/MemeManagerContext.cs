@@ -1,7 +1,10 @@
 ﻿using System;
 using System.IO;
+using MemeManager.DependencyInjection;
 using MemeManager.Persistence.Entity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Splat;
 
 namespace MemeManager.Persistence;
 
@@ -31,6 +34,9 @@ public sealed class MemeManagerContext : DbContext
         => options
             // See https://docs.microsoft.com/en-us/ef/core/querying/related-data/lazy
             .UseLazyLoadingProxies()
+            .UseLoggerFactory(Locator.Current.GetRequiredService<ILoggerFactory>())
+            // Uncomment this line to enable logging of transactions and stuff. Requires a minimum log level of Debug or higher
+            // .EnableSensitiveDataLogging()
             .UseSqlite($"Data Source={DbPath}");
 }
 

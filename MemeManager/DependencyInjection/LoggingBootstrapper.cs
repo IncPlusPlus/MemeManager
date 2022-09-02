@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Extensions.Logging;
 using Splat;
@@ -9,6 +10,7 @@ public static class LoggingBootstrapper
 {
     public static void RegisterLogging(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
+        // Register an ILoggerFactory instance for inflexible APIs that might require an ILoggerFactory instead of an ILogger instance
         services.RegisterLazySingleton(() =>
         {
             var globalConfig = resolver.GetRequiredService<IConfiguration>();
@@ -22,10 +24,10 @@ public static class LoggingBootstrapper
                 // https://github.com/serilog/serilog-sinks-file#json-appsettingsjson-configuration
                 .ReadFrom.Configuration(globalConfig)
                 .CreateLogger();
-            var factory = new SerilogLoggerFactory(logger);
-
-            return factory.CreateLogger("Default");
+            return (ILoggerFactory)new SerilogLoggerFactory(logger);
         });
+        // Register a default ILogger instance
+        services.RegisterLazySingleton(() => resolver.GetRequiredService<ILoggerFactory>().CreateLogger("Default"));
         /*
          * TODO: In the future, we could fetch the log instance in a much easier way and access shorter
          * method names than what MSoft.Extensions.Logging provides. https://www.reactiveui.net/docs/handbook/logging/

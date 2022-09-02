@@ -65,16 +65,10 @@ public class MemeService : IMemeService
 
     public Meme SetCategory(Meme meme, Category? category)
     {
-        try
-        {
-            meme.Category = category;
-            return meme;
-        }
-        finally
-        {
-            // TODO: This fails because of something related to entity tracking
-            _context.SaveChanges();
-        }
+        meme.Category = category;
+        //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
+        _context.SaveChanges();
+        return meme;
     }
 
     private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)
