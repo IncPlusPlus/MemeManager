@@ -11,11 +11,13 @@ namespace MemeManager.Services.Implementations;
 public class CategoryService : ICategoryService
 {
     private readonly MemeManagerContext _context;
+    private readonly IDbChangeNotifier _dbChangeNotifier;
     private readonly ILogger _log;
 
-    public CategoryService(MemeManagerContext context, ILogger logger)
+    public CategoryService(MemeManagerContext context, IDbChangeNotifier dbChangeNotifier, ILogger logger)
     {
         _context = context;
+        _dbChangeNotifier = dbChangeNotifier;
         _log = logger;
     }
 

@@ -23,15 +23,19 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
 {
     private ICategoryService _categoryService;
     private IFilterObserverService _filterObserver;
+    private readonly IDbChangeNotifier _dbChangeNotifier;
     private FolderIconConverter? _folderIconConverter;
 
-    public CategoriesListViewModel(IFilterObserverService filterObserverService, ICategoryService categoryService)
+    public CategoriesListViewModel(IFilterObserverService filterObserverService, IDbChangeNotifier dbChangeNotifier,
+        ICategoryService categoryService)
     {
         _filterObserver = filterObserverService;
+        _dbChangeNotifier = dbChangeNotifier;
         _categoryService = categoryService;
         List<CategoryTreeNodeModel> rootCategories;
         var assetLoader = AvaloniaLocator.Current.GetService<IAssetLoader>();
 
+        // TODO: Determine how much of this icon code is still needed. It was carried over from the example I made this from.
         if (assetLoader is not null)
         {
             using (var fileStream = assetLoader.Open(new Uri("avares://MemeManager/Assets/file.png")))

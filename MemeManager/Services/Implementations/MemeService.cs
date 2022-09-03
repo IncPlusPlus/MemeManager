@@ -15,11 +15,13 @@ namespace MemeManager.Services.Implementations;
 public class MemeService : IMemeService
 {
     private readonly MemeManagerContext _context;
+    private readonly IDbChangeNotifier _dbChangeNotifier;
     private readonly ILogger _log;
 
-    public MemeService(MemeManagerContext context, ILogger logger)
+    public MemeService(MemeManagerContext context, IDbChangeNotifier dbChangeNotifier, ILogger logger)
     {
         _context = context;
+        _dbChangeNotifier = dbChangeNotifier;
         _log = logger;
     }
 
@@ -68,6 +70,7 @@ public class MemeService : IMemeService
         meme.Category = category;
         //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
         _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Category) });
         return meme;
     }
 

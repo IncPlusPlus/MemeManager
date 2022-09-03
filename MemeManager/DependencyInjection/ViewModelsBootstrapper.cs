@@ -24,13 +24,14 @@ public static class ViewModelsBootstrapper
 
     private static void RegisterServices(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
+        var dbChangeNotifier = resolver.GetRequiredService<IDbChangeNotifier>();
         var filtersObserver = resolver.GetRequiredService<IFilterObserverService>();
         services.RegisterLazySingleton<ISearchbarViewModel>(() =>
             new SearchbarViewModel(filtersObserver));
         services.RegisterLazySingleton<ICategoriesListViewModel>(() =>
-            new CategoriesListViewModel(filtersObserver, resolver.GetRequiredService<ICategoryService>()));
+            new CategoriesListViewModel(filtersObserver, dbChangeNotifier, resolver.GetRequiredService<ICategoryService>()));
         services.RegisterLazySingleton<IMemesListViewModel>(() =>
-            new MemesListViewModel(resolver.GetRequiredService<ILogger>(), filtersObserver, resolver.GetRequiredService<IMemeService>(), resolver.GetRequiredService<ICategoryService>()));
+            new MemesListViewModel(resolver.GetRequiredService<ILogger>(), filtersObserver, dbChangeNotifier, resolver.GetRequiredService<IMemeService>(), resolver.GetRequiredService<ICategoryService>()));
         services.RegisterLazySingleton<IMainWindowViewModel>(() => new MainWindowViewModel(
             resolver.GetRequiredService<ISearchbarViewModel>(),
             resolver.GetRequiredService<ICategoriesListViewModel>(),

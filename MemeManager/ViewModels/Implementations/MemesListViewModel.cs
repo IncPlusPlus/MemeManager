@@ -36,11 +36,13 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
     private Category? _category;
     private string? _searchString;
     private IFilterObserverService _filterObserver;
+    private readonly IObservable<EventPattern<DbChangeEventArgs>> _dbChangedObservable;
     private ILogger _logger;
     private readonly IMemeService _memeService;
     private readonly ICategoryService _categoryService;
 
-    public MemesListViewModel(ILogger logger, IFilterObserverService filterObserverService, IMemeService memeService, ICategoryService categoryService)
+    public MemesListViewModel(ILogger logger, IFilterObserverService filterObserverService,
+        IDbChangeNotifier dbChangeNotifierInstance, IMemeService memeService, ICategoryService categoryService)
     {
         _logger = logger;
         _filterObserver = filterObserverService;
@@ -48,14 +50,32 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
         _categoryService = categoryService;
         SubscribeToEvents();
 
+        /*
+         * Create an Observable from the DbChanged event. There will be a new observation each time the event fires.
+         * See https://www.reactiveui.net/docs/handbook/events/#how-do-i-convert-my-own-c-events-into-observables
+         */
+        _dbChangedObservable = Observable.FromEventPattern<EventHandler<DbChangeEventArgs>, DbChangeEventArgs>(
+            handler => dbChangeNotifierInstance.EntitiesUpdated += handler,
+            handler => dbChangeNotifierInstance.EntitiesUpdated -= handler);
+
         // https://www.reactiveui.net/docs/getting-started/compelling-example
         _searchResults = this
             // Might need to be WhenAny to allow for null values
             // Should be able to just add more properties like tags and keywords
             // Be sure to do .Select(term => term?.Trim()) for keywords
             .WhenAnyValue(x => x.CurrentCategory, x => x.CurrentSearchString)
+            .Merge<(Category?, string?)>(this.WhenAnyObservable(x => x._dbChangedObservable)
+                    .Select(x => x.EventArgs)
+                    .Where(x => x.TypeRelevant(typeof(Meme)))
+                    .Select(x => (this.CurrentCategory, this.CurrentSearchString))
+                )
             .Throttle(TimeSpan.FromMilliseconds(50))
-            .DistinctUntilChanged()
+            /*
+             * Using DistinctUntilChanged causes the search results not to update on a category change because the
+             * currently selected category and search string haven't changed. By merging the observable for the DbChanged event,
+             * there will be a new observation but no new data. So, the current filters won't be distinct but we still want the search results to be updated.
+             */
+            // .DistinctUntilChanged()
             .SelectMany(SearchMemes)
             .ObserveOn(RxApp.MainThreadScheduler)
             .ToProperty(this, x => x.SearchResults);
@@ -64,6 +84,7 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
 
         // A helper method we can use for Visibility or Spinners to show if results are available.
         // We get the latest value of the SearchResults and make sure it's not null.
+        // TODO: This isn't used yet. Maybe show an indeterminate progress bar.
         _isAvailable = this
             .WhenAnyValue(x => x.SearchResults)
             .Select(searchResults => searchResults != null)
