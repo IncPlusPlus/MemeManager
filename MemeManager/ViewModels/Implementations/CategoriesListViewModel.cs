@@ -1,18 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Globalization;
-using System.Linq;
+using System.Reactive;
+using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Models.TreeDataGrid;
-using Avalonia.Controls.Selection;
-using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using DynamicData;
+using MemeManager.Extensions;
 using MemeManager.Models;
+using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using MemeManager.ViewModels.Interfaces;
 using ReactiveUI;
@@ -24,7 +27,10 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
     private ICategoryService _categoryService;
     private IFilterObserverService _filterObserver;
     private readonly IDbChangeNotifier _dbChangeNotifier;
+    private readonly IObservable<EventPattern<DbChangeEventArgs>> _dbChangedObservable;
     private FolderIconConverter? _folderIconConverter;
+    private ObservableCollection<Category> _categories;
+    private ReadOnlyObservableCollection<CategoryTreeNodeModel> _nodeViewModels;
 
     public CategoriesListViewModel(IFilterObserverService filterObserverService, IDbChangeNotifier dbChangeNotifier,
         ICategoryService categoryService)
@@ -32,8 +38,9 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
         _filterObserver = filterObserverService;
         _dbChangeNotifier = dbChangeNotifier;
         _categoryService = categoryService;
-        List<CategoryTreeNodeModel> rootCategories;
         var assetLoader = AvaloniaLocator.Current.GetService<IAssetLoader>();
+
+        SelectedNodes = new ObservableCollection<CategoryTreeNodeModel>();
 
         // TODO: Determine how much of this icon code is still needed. It was carried over from the example I made this from.
         if (assetLoader is not null)
@@ -51,56 +58,65 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
             }
         }
 
-        Source = new HierarchicalTreeDataGridSource<CategoryTreeNodeModel>(Array.Empty<CategoryTreeNodeModel>())
-        {
-            Columns =
+        _dbChangedObservable = Observable.FromEventPattern<EventHandler<DbChangeEventArgs>, DbChangeEventArgs>(
+            handler => _dbChangeNotifier.EntitiesUpdated += handler,
+            handler => _dbChangeNotifier.EntitiesUpdated -= handler);
+
+        _categories = new ObservableCollection<Category>(_categoryService.GetTopLevelCategories());
+
+        var models = new SourceCache<Category, int>(c => c.Id);
+
+        // Modeled from https://stackoverflow.com/a/53874449/1687436
+        var transformed = models
+            .Connect()
+            /*
+             * Avoids recreating the TreeNodeViewModel by instead changing its category property. While this might not
+             * change the value (since the EF proxy object will be the same instance just with updated values), it does
+             * provide two nice features.
+             *
+             * 1. When the models variable is updated (through models.AddOrUpdate()), the existing TreeNodeViewModels
+             * won't be replaced.
+             * 2. We can perform hacky solutions like calling other methods inside the Category setter if we absolutely
+             * have to.
+             */
+            .TransformWithInlineUpdate(u => new CategoryTreeNodeModel(u), (previousViewModel, updatedCategory) =>
             {
-                new HierarchicalExpanderColumn<CategoryTreeNodeModel>(
-                    new TemplateColumn<CategoryTreeNodeModel>(
-                        "Category",
-                        new FuncDataTemplate<CategoryTreeNodeModel>(FileNameTemplate, true),
-                        new GridLength(1, GridUnitType.Star),
-                        new ColumnOptions<CategoryTreeNodeModel>
-                        {
-                            CompareAscending = CategoryTreeNodeModel.SortAscending(x => x.Name),
-                            CompareDescending = CategoryTreeNodeModel.SortDescending(x => x.Name),
-                        })
-                    {
-                        IsTextSearchEnabled = true,
-                        TextSearchValueSelector = x => x.Name
-                    },
-                    x => x.Children,
-                    x => x.HasChildren,
-                    x => x.IsExpanded),
-                new TextColumn<CategoryTreeNodeModel, int>(
-                    "Number of memes",
-                    x => x.MemeCount
-                )
-            }
-        };
+                previousViewModel.Category = updatedCategory;
+            })
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Bind(out _nodeViewModels)
+            .Subscribe();
 
-        // Although we won't properly display the right memes for multiple categories, allowing multiselect
-        // will let users delete categories in bulk in the future
-        Source.RowSelection!.SingleSelect = false;
-        Source.RowSelection.SelectionChanged += OnSelectionChanged;
+        models.AddOrUpdate(_categoryService.GetTopLevelCategories());
 
-        // TODO: Implement a way to show uncategorized memes. Maybe a default row in the categories table.
-        rootCategories = _categoryService.GetTopLevelCategories().Select(i => new CategoryTreeNodeModel(i)).ToList();
+        this.WhenAnyObservable(x => x._dbChangedObservable)
+            .Select(x => x.EventArgs)
+            .Where(x => x.TypeRelevant(typeof(Category)))
+            .Subscribe(x => models.AddOrUpdate(_categoryService.GetTopLevelCategories()));
 
-        Source.Items = rootCategories;
+        SelectedNodes.CollectionChanged += TreeView_OnSelectionChanged;
     }
 
-    public HierarchicalTreeDataGridSource<CategoryTreeNodeModel> Source { get; }
+    public ReadOnlyObservableCollection<CategoryTreeNodeModel> NodeViewModels { get => _nodeViewModels; }
+    public ObservableCollection<Category> Categories { get { return _categories; } }
+    public ObservableCollection<CategoryTreeNodeModel> SelectedNodes { get; }
 
     public void ClearCategorySelection()
     {
-        Source.RowSelection?.Clear();
+        SelectedNodes.Clear();
     }
 
-    public void OnSelectionChanged(object? sender,
-        TreeSelectionModelSelectionChangedEventArgs<CategoryTreeNodeModel> args)
+    private void TreeView_OnSelectionChanged(object? sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
     {
-        _filterObserver.CurrentCategory = args.SelectedItems.FirstOrDefault()?.Category;
+        if (notifyCollectionChangedEventArgs.NewItems != null)
+        {
+            var firstItem = notifyCollectionChangedEventArgs.NewItems[0] as CategoryTreeNodeModel;
+            _filterObserver.CurrentCategory = firstItem?.Category;
+        }
+        else
+        {
+            _filterObserver.CurrentCategory = null;
+        }
     }
 
     private IControl FileNameTemplate(CategoryTreeNodeModel node, INameScope ns)

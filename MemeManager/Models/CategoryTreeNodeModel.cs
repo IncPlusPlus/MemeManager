@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.IO;
 using MemeManager.Persistence.Entity;
 using ReactiveUI;
@@ -14,6 +15,7 @@ public class CategoryTreeNodeModel : ReactiveObject
     private ObservableCollection<CategoryTreeNodeModel>? _children;
     private bool _hasChildren;
     private bool _isExpanded;
+    private int _memeCount;
 
     public CategoryTreeNodeModel(Category category)
     {
@@ -21,6 +23,26 @@ public class CategoryTreeNodeModel : ReactiveObject
         _name = category.Name;
         _isExpanded = false;
         _hasChildren = category.Children?.Count > 0;
+        _memeCount = category.Memes.Count;
+
+        Category.Memes.CollectionChanged += MemesChanged;
+        // TODO: Will likely have to subscribe to child category changes to reflect them in the UI
+    }
+
+
+    private void MemesChanged(object? sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
+    {
+        if (sender == null)
+        {
+            return;
+        }
+        var collection = (ObservableCollection<Meme>)sender;
+        /*
+         * For some reason, notifyCollectionChangedEventArgs.NewItems is always yielding null. I noticed that the sender
+         * is an instance of the ObservableCollection itself. Because that object has the updated collection, I can get
+         * the Count from there instead of from notifyCollectionChangedEventArgs.NewItems.
+         */
+        MemeCount = collection.Count;
     }
 
     public bool IsRoot => Category.Parent == null;
@@ -28,7 +50,7 @@ public class CategoryTreeNodeModel : ReactiveObject
     public Category Category
     {
         get => _category;
-        private set => this.RaiseAndSetIfChanged(ref _category, value);
+        set => this.RaiseAndSetIfChanged(ref _category, value);
     }
 
     public string Name
@@ -37,7 +59,11 @@ public class CategoryTreeNodeModel : ReactiveObject
         private set => this.RaiseAndSetIfChanged(ref _name, value);
     }
 
-    public int MemeCount => Category.Memes.Count;
+    public int MemeCount
+    {
+        get => _memeCount;
+        private set => this.RaiseAndSetIfChanged(ref _memeCount, value);
+    }
 
     public bool HasChildren
     {

@@ -76,6 +76,7 @@ public class MemeService : IMemeService
 
     private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)
     {
+        // TODO: Maybe add an option to include memes from all child categories as well
         _log.LogDebug("Starting search for category {CategoryName}...", category?.Name);
         var query = _context.Memes
             // Return all memes if the category is null. Otherwise, filter by the category.

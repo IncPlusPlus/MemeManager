@@ -18,13 +18,23 @@
                 <Button VerticalAlignment="Center" Command="{Binding ClearCategorySelection}">Deselect</Button>
             </Border>
         </StackPanel>
-
-        <TreeDataGrid Name="categoryViewer" Source="{Binding Source}">
-            <TreeDataGrid.Styles>
-                <Style Selector="TreeDataGrid TreeDataGridRow:nth-child(2n)">
-                    <Setter Property="Background" Value="#fff8f8f8" />
-                </Style>
-            </TreeDataGrid.Styles>
-        </TreeDataGrid>
+        <TreeView
+        Padding="0"
+        BorderThickness="0"
+        Items="{Binding NodeViewModels, Mode=OneWay}"
+        SelectedItems="{Binding SelectedNodes}"
+        SelectionMode="Multiple">
+        <TreeView.ItemTemplate>
+            <TreeDataTemplate ItemsSource="{Binding Children}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Name}"/>
+                    <TextBlock Text="   "/>
+                    <TextBlock Text="("/>
+                    <TextBlock Text="{Binding MemeCount}"/>
+                    <TextBlock Text=")"/>
+                </StackPanel>
+            </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+    </TreeView>
     </StackPanel>
 </UserControl>
