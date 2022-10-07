@@ -46,7 +46,7 @@ public static class DynamicDataEx
 
                                 updateAction(previous, change.Current);
 
-                                    //send a refresh as this will force downstream operators 
+                                //send a refresh as this will force downstream operators 
                                 cache.Refresh(change.Key);
                             }
                             break;
@@ -57,7 +57,7 @@ public static class DynamicDataEx
                             cache.Refresh(change.Key);
                             break;
                         case ChangeReason.Moved:
-                                //Do nothing !
+                            //Do nothing !
                             break;
                     }
                 }
