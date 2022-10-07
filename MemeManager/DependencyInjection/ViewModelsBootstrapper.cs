@@ -29,7 +29,7 @@ public static class ViewModelsBootstrapper
         services.RegisterLazySingleton<ISearchbarViewModel>(() =>
             new SearchbarViewModel(filtersObserver));
         services.RegisterLazySingleton<ICategoriesListViewModel>(() =>
-            new CategoriesListViewModel(filtersObserver, dbChangeNotifier, resolver.GetRequiredService<ICategoryService>()));
+            new CategoriesListViewModel(filtersObserver, dbChangeNotifier, resolver.GetRequiredService<ICategoryService>(), resolver.GetRequiredService<IMemeService>()));
         services.RegisterLazySingleton<IMemesListViewModel>(() =>
             new MemesListViewModel(resolver.GetRequiredService<ILogger>(), filtersObserver, dbChangeNotifier, resolver.GetRequiredService<IMemeService>(), resolver.GetRequiredService<ICategoryService>()));
         services.RegisterLazySingleton<IMainWindowViewModel>(() => new MainWindowViewModel(

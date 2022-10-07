@@ -24,9 +24,9 @@
         Items="{Binding NodeViewModels, Mode=OneWay}"
         SelectedItems="{Binding SelectedNodes}"
         SelectionMode="Multiple">
-        <TreeView.ItemTemplate>
+          <TreeView.ItemTemplate>
             <TreeDataTemplate ItemsSource="{Binding Children}">
-                <StackPanel Orientation="Horizontal">
+              <StackPanel Orientation="Horizontal" DragDrop.AllowDrop="True">
                     <TextBlock Text="{Binding Name}"/>
                     <TextBlock Text="   "/>
                     <TextBlock Text="("/>

@@ -25,6 +25,7 @@ namespace MemeManager.ViewModels.Implementations;
 public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
 {
     private ICategoryService _categoryService;
+    private IMemeService _memeService;
     private IFilterObserverService _filterObserver;
     private readonly IDbChangeNotifier _dbChangeNotifier;
     private readonly IObservable<EventPattern<DbChangeEventArgs>> _dbChangedObservable;
@@ -33,11 +34,12 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
     private ReadOnlyObservableCollection<CategoryTreeNodeModel> _nodeViewModels;
 
     public CategoriesListViewModel(IFilterObserverService filterObserverService, IDbChangeNotifier dbChangeNotifier,
-        ICategoryService categoryService)
+        ICategoryService categoryService, IMemeService memeService)
     {
         _filterObserver = filterObserverService;
         _dbChangeNotifier = dbChangeNotifier;
         _categoryService = categoryService;
+        _memeService = memeService;
         var assetLoader = AvaloniaLocator.Current.GetService<IAssetLoader>();
 
         SelectedNodes = new ObservableCollection<CategoryTreeNodeModel>();
@@ -117,6 +119,11 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
         {
             _filterObserver.CurrentCategory = null;
         }
+    }
+
+    public void SetCategory(Category category, IEnumerable<Meme> draggedMemes)
+    {
+        draggedMemes.ForEach(m => _memeService.SetCategory(m, category));
     }
 
     private IControl FileNameTemplate(CategoryTreeNodeModel node, INameScope ns)
