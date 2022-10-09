@@ -18,8 +18,8 @@ public abstract class DraggableControl : UserControl
     {
         PointerPressed += DoDrag;
         /*
-         * Everything commented out below is how this would be implemented if issue #34 wasn't in the way.
-         * I'm keeping this around so I've got an alternate solution if I can manage to solve that issue.
+         * Everything commented out below is how this would be implemented if issue #34 wasn't in the way (this includes
+         * the commented out methods as well). I'm keeping this around so I've got an alternate solution if I can manage to solve that issue.
          */
 
         // Empty object so the field is always at least initialized
@@ -86,10 +86,18 @@ public abstract class DraggableControl : UserControl
     // Calling DragDrop.DoDragDrop immediately causes issue #34 but is the only way way I can implement this behavior for now.
     private async void DoDrag(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
-        _log.LogTrace("Call to DoDrag has begun");
-        var dragData = CreateDataObject();
-        var result = await DragDrop.DoDragDrop(e, dragData, DragDropEffects.Copy);
-        _log.LogTrace("Drag & Drop operation completed with DragDropEffect.{DragDropEffect}", result);
+        var pointProps = e.GetCurrentPoint(this).Properties;
+        if (!pointProps.IsLeftButtonPressed)
+        {
+            _log.LogTrace("Not starting DoDrag because pointer event was not left mouse button. Pointer update event was {UpdateType}", pointProps.PointerUpdateKind);
+        }
+        else
+        {
+            _log.LogTrace("Call to DoDrag has begun");
+            var dragData = CreateDataObject();
+            var result = await DragDrop.DoDragDrop(e, dragData, DragDropEffects.Copy);
+            _log.LogTrace("Drag & Drop operation completed with DragDropEffect.{DragDropEffect}", result);
+        }
     }
 
     // private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
