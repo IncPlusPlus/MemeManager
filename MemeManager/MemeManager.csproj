@@ -91,7 +91,7 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.3.0"/>
     <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1"/>
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0"/>
-    <PackageReference Include="XamlNameReferenceGenerator" Version="1.3.4"/>
+    <PackageReference Include="XamlNameReferenceGenerator" Version="1.4.2"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Dependencies\Avalonia.Controls.TreeDataGrid\src\Avalonia.Controls.TreeDataGrid\Avalonia.Controls.TreeDataGrid.csproj"/>
