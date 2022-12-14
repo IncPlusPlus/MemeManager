@@ -50,7 +50,7 @@
 
   <PropertyGroup>
     <AvaloniaVersion>0.10.18</AvaloniaVersion>
-    <EntityFrameworkVersion>6.0.8</EntityFrameworkVersion>
+    <EntityFrameworkVersion>7.0.1</EntityFrameworkVersion>
     <MicrosoftExtensionsConfigurationVersion>6.0.0</MicrosoftExtensionsConfigurationVersion>
   </PropertyGroup>
 
