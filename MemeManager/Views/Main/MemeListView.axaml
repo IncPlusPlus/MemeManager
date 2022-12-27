@@ -62,7 +62,9 @@
                     </Style>
                   </MenuItem.Styles>
                 </MenuItem>
-              </ContextMenu>
+               <MenuItem Header="Set Tags"
+                         Command="{Binding $parent[UserControl].DataContext.ImplicitShowDialogCommand}" CommandParameter="{Binding ElementName=MemesListBox, Path=SelectedItems}" />
+               </ContextMenu>
             </Setter.Value>
           </Setter>
          </Style>
