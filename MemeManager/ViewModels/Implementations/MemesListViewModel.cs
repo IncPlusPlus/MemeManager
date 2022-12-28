@@ -174,11 +174,6 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
         var selectedMemes = ((AvaloniaList<object>?)memes)?.Select(x => ((FileViewModel)x).Meme) ?? new List<Meme>();
         dialogViewModel.TargetMemes = selectedMemes;
         var success = await showDialogAsync(dialogViewModel).ConfigureAwait(true);
-        Console.WriteLine();
-        // if (success == true)
-        // {
-        //     Texts.Add(dialogViewModel.Text);
-        // }
     }
 }
 
