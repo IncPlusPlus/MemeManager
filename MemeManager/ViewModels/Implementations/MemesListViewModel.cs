@@ -216,7 +216,7 @@ public class ChangeCategorySelection
 
 public class ChangeCategorySelectorConverter : IMultiValueConverter
 {
-    public object Convert(IList<object?> values, Type targetType, object parameter,
+    public object Convert(IList<object?> values, Type targetType, object? parameter,
         System.Globalization.CultureInfo culture)
     {
         return new ChangeCategorySelection()
