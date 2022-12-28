@@ -57,16 +57,17 @@ public partial class CategoriesListView : UserControl
             // Our TextBlock's parent is StackPanel whose parent is a TreeViewItem (per CategoriesListView.axaml)
             if (categoryTextBlock.GetLogicalParent().GetLogicalParent() is TreeViewItem treeViewItem)
             {
-                // This is so delicate. I hate it.
-                if (treeViewItem.GetLogicalParent().GetLogicalParent().GetLogicalParent() is CategoriesListView
-                    categoriesList)
+                // Check if an ancestor of this TreeViewItem is an instance of CategoriesListView
+                // The braces are a null pattern check. See https://stackoverflow.com/a/71849657/1687436
+                if (treeViewItem.FindLogicalAncestorOfType<CategoriesListView>() is { } categoriesList)
                 {
                     e.DragEffects = e.DragEffects & (DragDropEffects.Copy);
                     var treeNodeVm = treeViewItem.DataContext as CategoryTreeNodeModel;
                     var categoriesListVm = categoriesList.DataContext as CategoriesListViewModel;
                     var draggedMemes = e.Data.Get(FileView.MemeIdListFormat) as IEnumerable<Meme>;
                     // Change the category of these memes
-                    categoriesListVm?.SetCategory(treeNodeVm?.Category ?? throw new InvalidOperationException(), draggedMemes ?? throw new InvalidOperationException());
+                    categoriesListVm?.SetCategory(treeNodeVm?.Category ?? throw new InvalidOperationException(),
+                        draggedMemes ?? throw new InvalidOperationException());
                 }
                 else
                 {
