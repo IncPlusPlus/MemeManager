@@ -112,20 +112,20 @@ public static class ConfigurationBootstrapper
             }
         }
 
-        public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object value, Type destinationType)
+        public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value,
+            Type destinationType)
         {
             if (destinationType == null)
             {
                 throw new ArgumentNullException(nameof(destinationType));
             }
+
             if (destinationType != typeof(string))
             {
-                throw new NotSupportedException(String.Format("Cannot convert from GridLength to {0}.", destinationType.ToString()));
+                throw new NotSupportedException($"Cannot convert from GridLength to {destinationType}.");
             }
-            else
-            {
-                return value.ToString();
-            }
+
+            return value == null ? string.Empty : value.ToString();
         }
     }
 }
