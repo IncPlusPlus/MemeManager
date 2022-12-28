@@ -29,9 +29,9 @@
            <!--Defines a context menu for each ListBoxItem-->
            <Setter Property="ContextMenu">
              <Setter.Value>
-               <!-- TODO: Currently only leaf nodes will fire the SetCategoryCommand. See https://github.com/AvaloniaUI/Avalonia/discussions/8871 for progress on this issue -->
+               <!-- TODO: Currently only leaf nodes will fire the SetCategoryCommand. See https://github.com/AvaloniaUI/Avalonia/discussions/8871 for progress on this issue. Tracked in https://github.com/IncPlusPlus/MemeManager/issues/44 -->
                <!-- TODO: Examine the description of TreeView's SelectedItem prop. "Note that setting this property only currently works if the item is expanded to be visible. To select non-expanded nodes use `Selection.SelectedIndex`.". Is there something similar for this case that'd let us select non-expanded items in the context menu? -->
-               <ContextMenu DataContext="{Binding $parent[ListBoxItem].DataContext}" Name="ContextMenu">
+               <ContextMenu DataContext="{Binding $parent[ListBoxItem].DataContext}" Name="ListBoxItemContextMenu">
                <!-- <ContextMenu DataContext="{Binding PlacementTarget, RelativeSource={RelativeSource FindAncestor, AncestorType=ListBoxItem}}"> -->
                 <MenuItem Header="Set Category" Items="{Binding $parent[UserControl].DataContext.Categories, Mode=OneWay}" Name="SetCategoryButton">
                   <MenuItem.Styles>
@@ -53,7 +53,7 @@
                           <Binding/>
 
                           <!-- Gets the object the ContextMenu was created on -->
-                          <!-- <Binding ElementName="ContextMenu" Path="DataContext"/> -->
+                          <!-- <Binding ElementName="ListBoxItemContextMenu" Path="DataContext"/> -->
                           <!-- The category that is selected in the Set Category submenu -->
                           <!-- <Binding ElementName="SetCategoryButton" Path="Selection.SelectedItem"></Binding> -->
                           <!-- <Binding ElementName="SetCategoryButton" Path="DataContext"></Binding> -->
