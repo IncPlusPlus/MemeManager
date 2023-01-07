@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
     <TrimMode>copyused</TrimMode>
@@ -50,8 +50,8 @@
 
   <PropertyGroup>
     <AvaloniaVersion>0.10.18</AvaloniaVersion>
-    <EntityFrameworkVersion>6.0.8</EntityFrameworkVersion>
-    <MicrosoftExtensionsConfigurationVersion>6.0.0</MicrosoftExtensionsConfigurationVersion>
+    <EntityFrameworkVersion>7.0.1</EntityFrameworkVersion>
+    <MicrosoftExtensionsConfigurationVersion>7.0.0</MicrosoftExtensionsConfigurationVersion>
   </PropertyGroup>
 
   <ItemGroup>
