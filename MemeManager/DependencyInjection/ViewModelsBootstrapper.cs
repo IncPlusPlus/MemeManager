@@ -48,7 +48,7 @@ public static class ViewModelsBootstrapper
         services.RegisterLazySingleton<ISearchbarViewModel>(() =>
             new SearchbarViewModel(filtersObserver));
         services.RegisterLazySingleton<ICategoriesListViewModel>(() =>
-            new CategoriesListViewModel(filtersObserver, dbChangeNotifier, categoryService, memeService));
+            new CategoriesListViewModel(resolver.GetRequiredService<IDialogService>(), filtersObserver, dbChangeNotifier, categoryService, memeService));
         services.RegisterLazySingleton<IMemesListViewModel>(() =>
             new MemesListViewModel(resolver.GetRequiredService<ILogger>(),
                 resolver.GetRequiredService<IDialogService>(), filtersObserver, dbChangeNotifier, memeService,
@@ -61,6 +61,7 @@ public static class ViewModelsBootstrapper
         ));
         services.RegisterLazySingleton<IChangeTagsCustomDialogViewModel>(() =>
             new ChangeTagsCustomDialogViewModel(memeService, tagService));
+        services.RegisterLazySingleton<INewCategoryDialogViewModel>(() => new NewCategoryDialogViewModel());
     }
 
     private static void RegisterFactories(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)

@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -13,29 +15,34 @@ using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using DynamicData;
+using HanumanInstitute.MvvmDialogs;
+using MemeManager.DependencyInjection;
 using MemeManager.Extensions;
 using MemeManager.Models;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using MemeManager.ViewModels.Interfaces;
 using ReactiveUI;
+using Splat;
 
 namespace MemeManager.ViewModels.Implementations;
 
 public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
 {
-    private ICategoryService _categoryService;
-    private IMemeService _memeService;
-    private IFilterObserverService _filterObserver;
-    private readonly IDbChangeNotifier _dbChangeNotifier;
     private readonly IObservable<EventPattern<DbChangeEventArgs>> _dbChangedObservable;
-    private FolderIconConverter? _folderIconConverter;
+    private readonly IDbChangeNotifier _dbChangeNotifier;
+    private readonly IDialogService _dialogService;
     private ObservableCollection<Category> _categories;
+    private ICategoryService _categoryService;
+    private IFilterObserverService _filterObserver;
+    private FolderIconConverter? _folderIconConverter;
+    private IMemeService _memeService;
     private ReadOnlyObservableCollection<CategoryTreeNodeModel> _nodeViewModels;
 
-    public CategoriesListViewModel(IFilterObserverService filterObserverService, IDbChangeNotifier dbChangeNotifier,
+    public CategoriesListViewModel(IDialogService dialogService, IFilterObserverService filterObserverService, IDbChangeNotifier dbChangeNotifier,
         ICategoryService categoryService, IMemeService memeService)
     {
+        _dialogService = dialogService;
         _filterObserver = filterObserverService;
         _dbChangeNotifier = dbChangeNotifier;
         _categoryService = categoryService;
@@ -81,10 +88,11 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
              * 2. We can perform hacky solutions like calling other methods inside the Category setter if we absolutely
              * have to.
              */
-            .TransformWithInlineUpdate(u => new CategoryTreeNodeModel(u), (previousViewModel, updatedCategory) =>
-            {
-                previousViewModel.Category = updatedCategory;
-            })
+            .TransformWithInlineUpdate(u => new CategoryTreeNodeModel(u, categoryService),
+                (previousViewModel, updatedCategory) =>
+                {
+                    previousViewModel.Category = updatedCategory;
+                })
             .ObserveOn(RxApp.MainThreadScheduler)
             .Bind(out _nodeViewModels)
             .Subscribe();
@@ -94,21 +102,37 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
         this.WhenAnyObservable(x => x._dbChangedObservable)
             .Select(x => x.EventArgs)
             .Where(x => x.TypeRelevant(typeof(Category)))
-            .Subscribe(x => models.AddOrUpdate(_categoryService.GetTopLevelCategories()));
+            .Subscribe(x =>
+            {
+                var topLevelCategories = _categoryService.GetTopLevelCategories();
+                // Determine if there have been any removed categories
+                var removedCategories = NodeViewModels.Where(model =>
+                    !topLevelCategories.Select(c => c.Id).Contains(model.Category.Id)).Select(n => n.Category);
+                models.Remove(removedCategories);
+                // In-place update the existing category models
+                models.AddOrUpdate(topLevelCategories);
+            });
 
         SelectedNodes.CollectionChanged += TreeView_OnSelectionChanged;
+        NewCategoryCommand = ReactiveCommand.CreateFromTask(CreateNewCategory);
+        DeleteCategoryCommand = ReactiveCommand.Create<Collection<CategoryTreeNodeModel>>(DeleteCategories);
+        NewSubcategoryCommand = ReactiveCommand.CreateFromTask<CategoryTreeNodeModel>(CreateSubcategory);
     }
 
     public ReadOnlyObservableCollection<CategoryTreeNodeModel> NodeViewModels { get => _nodeViewModels; }
     public ObservableCollection<Category> Categories { get { return _categories; } }
     public ObservableCollection<CategoryTreeNodeModel> SelectedNodes { get; }
+    public ReactiveCommand<Unit, Unit> NewCategoryCommand { get; }
+    public ReactiveCommand<Collection<CategoryTreeNodeModel>, Unit> DeleteCategoryCommand { get; }
+    public ReactiveCommand<CategoryTreeNodeModel, Unit> NewSubcategoryCommand { get; }
 
     public void ClearCategorySelection()
     {
         SelectedNodes.Clear();
     }
 
-    private void TreeView_OnSelectionChanged(object? sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
+    private void TreeView_OnSelectionChanged(object? sender,
+        NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
     {
         if (notifyCollectionChangedEventArgs.NewItems != null)
         {
@@ -124,6 +148,44 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
     public void SetCategory(Category category, IEnumerable<Meme> draggedMemes)
     {
         draggedMemes.ForEach(m => _memeService.SetCategory(m, category));
+    }
+
+    private async Task CreateNewCategory()
+    {
+        var dialogViewModel = _dialogService.CreateViewModel<INewCategoryDialogViewModel>();
+        // Because I'm reusing a viewmodel, the existing instance could have text from previous uses. Clear it.
+        dialogViewModel.Text = "";
+
+        // The ownerViewModel is required to be a be the DataContext of a Window. I can't use 'this' like in the examples because MemesListViewModel is the DataContext of MemesListView which isn't a Window.
+        var success = await _dialogService.ShowDialogAsync<NewCategoryDialog>(Locator.Current.GetRequiredService<IMainWindowViewModel>() as MainWindowViewModel, dialogViewModel).ConfigureAwait(true);
+        if (success == true)
+        {
+            var name = dialogViewModel.Text;
+            // TODO: This needs to be initialized with the correct parent directory
+            _categoryService.Create(new Category() { Name = name, Path = "someParentDir/" + name });
+        }
+    }
+
+    private async Task CreateSubcategory(CategoryTreeNodeModel node)
+    {
+        var parentCategory = node.Category;
+        var dialogViewModel = _dialogService.CreateViewModel<INewCategoryDialogViewModel>();
+        // Because I'm reusing a viewmodel, the existing instance could have text from previous uses. Clear it.
+        dialogViewModel.Text = "";
+
+        // The ownerViewModel is required to be a be the DataContext of a Window. I can't use 'this' like in the examples because MemesListViewModel is the DataContext of MemesListView which isn't a Window.
+        var success = await _dialogService.ShowDialogAsync<NewCategoryDialog>(Locator.Current.GetRequiredService<IMainWindowViewModel>() as MainWindowViewModel, dialogViewModel).ConfigureAwait(true);
+        if (success == true)
+        {
+            var name = dialogViewModel.Text;
+            // TODO: This needs to be initialized with the correct parent directory
+            _categoryService.Create(new Category() { Name = name, Path = "someParentDir/" + name, Parent = parentCategory });
+        }
+    }
+
+    private void DeleteCategories(Collection<CategoryTreeNodeModel> nodeList)
+    {
+        _categoryService.Delete(nodeList.Select(nodeModel => nodeModel.Category).ToArray());
     }
 
     private IControl FileNameTemplate(CategoryTreeNodeModel node, INameScope ns)

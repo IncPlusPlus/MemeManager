@@ -49,6 +49,29 @@ public class CategoryService : ICategoryService
     {
         _context.Categories.Add(newCategory);
         _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
         return newCategory;
+    }
+
+    public void Delete(params Category[] categories)
+    {
+        // TODO: Figure out what will happen with memes that are in this category. Might need to unset their category manually.
+        // TODO: Deal with orphaned memes. Maybe there needs to be a default category named "uncategorized"
+        foreach (var category in categories)
+        {
+            // TODO: If category has any children, they need to be deleted too
+            _context.Categories.Remove(category);
+        }
+
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
+    }
+
+    public Category Rename(Category category, string name)
+    {
+        category.Name = name;
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
+        return category;
     }
 }

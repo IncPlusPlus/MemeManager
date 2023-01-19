@@ -107,7 +107,7 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
     public ReactiveCommand<IList<object?>, Unit> ImplicitShowDialogCommand { get; }
 
     public List<CategoryTreeNodeModel> Categories =>
-        _categoryService.GetTopLevelCategories().Select(x => new CategoryTreeNodeModel(x)).ToList();
+        _categoryService.GetTopLevelCategories().Select(x => new CategoryTreeNodeModel(x, _categoryService)).ToList();
 
     public ReactiveCommand<ChangeCategorySelection, Unit> SetCategoryCommand { get; }
 
