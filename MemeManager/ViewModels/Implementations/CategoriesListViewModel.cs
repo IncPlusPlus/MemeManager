@@ -162,7 +162,7 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
         {
             var name = dialogViewModel.Text;
             // TODO: This needs to be initialized with the correct parent directory
-            _categoryService.Create(new Category() { Name = name, Path = "someParentDir/" + name });
+            _categoryService.Create(new Category() { Name = name });
         }
     }
 
@@ -179,7 +179,7 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
         {
             var name = dialogViewModel.Text;
             // TODO: This needs to be initialized with the correct parent directory
-            _categoryService.Create(new Category() { Name = name, Path = "someParentDir/" + name, Parent = parentCategory });
+            _categoryService.Create(new Category() { Name = name, Parent = parentCategory });
         }
     }
 

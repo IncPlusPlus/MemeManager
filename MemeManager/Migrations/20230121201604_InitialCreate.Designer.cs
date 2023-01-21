@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MemeManager.Migrations
 {
     [DbContext(typeof(MemeManagerContext))]
-    [Migration("20230121174954_InitialCreate")]
+    [Migration("20230121201604_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -36,10 +36,6 @@ namespace MemeManager.Migrations
 
                     b.Property<int?>("ParentId")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("Path")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
