@@ -1,5 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
+             xmlns:iac="clr-namespace:Avalonia.Xaml.Interactions.Custom;assembly=Avalonia.Xaml.Interactions"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="300"
@@ -9,8 +11,8 @@
         <viewModels:CategoriesListViewModel />
     </Design.DataContext>
 
-    <StackPanel>
-        <StackPanel Orientation="Horizontal">
+    <DockPanel>
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
             <TextBlock Text="Categories" Padding="4" VerticalAlignment="Center" FontWeight="UltraBold" />
             <Border
                 Background="{DynamicResource ThemeAccentBrush}"
@@ -18,13 +20,63 @@
                 <Button VerticalAlignment="Center" Command="{Binding ClearCategorySelection}">Deselect</Button>
             </Border>
         </StackPanel>
-
-        <TreeDataGrid Name="categoryViewer" Source="{Binding Source}">
-            <TreeDataGrid.Styles>
-                <Style Selector="TreeDataGrid TreeDataGridRow:nth-child(2n)">
-                    <Setter Property="Background" Value="#fff8f8f8" />
-                </Style>
-            </TreeDataGrid.Styles>
-        </TreeDataGrid>
-    </StackPanel>
+        <TreeView
+          Name="CategoriesTreeView"
+          Padding="0"
+          BorderThickness="0"
+          Items="{Binding NodeViewModels, Mode=OneWay}"
+          SelectedItems="{Binding SelectedNodes}"
+          SelectionMode="Multiple">
+          <TreeView.ContextMenu>
+            <ContextMenu Name="TreeViewContextMenu">
+              <MenuItem Header="New Category" Command="{Binding NewCategoryCommand}" />
+            </ContextMenu>
+          </TreeView.ContextMenu>
+          <TreeView.ItemTemplate>
+            <TreeDataTemplate ItemsSource="{Binding Children}">
+              <StackPanel Orientation="Horizontal" DragDrop.AllowDrop="True">
+                <i:Interaction.Behaviors>
+                  <iac:ShowOnDoubleTappedBehavior TargetControl="TextBoxEdit" />
+                  <iac:ShowOnKeyDownTappedBehavior TargetControl="TextBoxEdit" />
+                </i:Interaction.Behaviors>
+                <TextBox  x:Name="TextBoxEdit"
+                          IsVisible="False"
+                          Height="{Binding #StyleTextBlock.Bounds.Height}"
+                          VerticalContentAlignment="Center"
+                          VerticalAlignment="Center"
+                          Margin="0"
+                          Padding="6,0,6,0"
+                          BorderThickness="0"
+                          Text="{Binding Name, Mode=TwoWay}">
+                  <i:Interaction.Behaviors>
+                    <iac:HideOnKeyPressedBehavior TargetControl="TextBoxEdit" Key="Escape" />
+                    <iac:HideOnKeyPressedBehavior TargetControl="TextBoxEdit" Key="Enter" />
+                    <iac:HideOnLostFocusBehavior TargetControl="TextBoxEdit" />
+                    <iac:SelectAllOnGotFocusBehavior />
+                  </i:Interaction.Behaviors>
+                </TextBox>
+                  <TextBlock x:Name="StyleTextBlock" Focusable="True" IsVisible="{Binding !#TextBoxEdit.IsVisible}"
+                             Text="{Binding Name}" Margin="6,8,8,8"/>
+                <TextBlock Text="   " Margin="0,8,0,8"/>
+                <TextBlock Text="(" Margin="0,8,0,8"/>
+                <TextBlock Text="{Binding MemeCount}" Margin="0,8,0,8"/>
+                <TextBlock Text=")" Margin="0,8,0,8"/>
+              </StackPanel>
+            </TreeDataTemplate>
+          </TreeView.ItemTemplate>
+          <TreeView.Styles>
+            <Style Selector="TreeViewItem">
+              <Setter Property="ContextMenu">
+                <Setter.Value>
+                  <ContextMenu Name="TreeViewItemContextMenu">
+                    <MenuItem Header="New Category" Command="{Binding $parent[UserControl].DataContext.NewCategoryCommand}" />
+                    <MenuItem Header="New Subcategory" Command="{Binding $parent[UserControl].DataContext.NewSubcategoryCommand}" CommandParameter="{Binding}" />
+                    <MenuItem Header="Delete Category" Command="{Binding $parent[UserControl].DataContext.DeleteCategoryCommand}" CommandParameter="{Binding $parent[UserControl].DataContext.SelectedNodes}" />
+                  </ContextMenu>
+                </Setter.Value>
+              </Setter>
+            </Style>
+          </TreeView.Styles>
+        </TreeView>
+    </DockPanel>
 </UserControl>

@@ -1,0 +1,101 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:implementations="clr-namespace:MemeManager.ViewModels.Implementations"
+        mc:Ignorable="d" d:DesignWidth="500" d:DesignHeight="500"
+        x:Class="MemeManager.Views.ChangeTagsDialog"
+        Title="Change Tags"
+        Width="500"
+        Height="500"
+        WindowStartupLocation="CenterOwner">
+  <Design.DataContext>
+    <implementations:ChangeTagsCustomDialogViewModel/>
+  </Design.DataContext>
+  <Border Padding="15">
+    <StackPanel>
+    <TextBlock Text="Tags" FontSize="18" Margin="5,0" />
+    <TextBlock Text="Multiple memes selected. Showing only tags they have in common." IsVisible="{Binding IsMultipleMemes}" />
+    <ItemsRepeater Items="{Binding ExistingTags}">
+      <ItemsRepeater.Layout>
+        <WrapLayout Orientation="Horizontal" />
+      </ItemsRepeater.Layout>
+      <ItemsRepeater.ItemTemplate>
+        <DataTemplate>
+            <Border CornerRadius="10" Padding="4" BorderBrush="Black"
+                    BorderThickness="2">
+              <!-- <Panel Background="#7FFF22DD"> -->
+          <StackPanel Spacing="5" Orientation="Horizontal">
+                <Button Name="DeleteTagButton" HorizontalAlignment="Center" Height="25" Width="25" Command="{Binding DataContext.RemoveTag, RelativeSource={RelativeSource AncestorType=ItemsRepeater}}" CommandParameter="{Binding }">
+                  <PathIcon Height="18" Width="18" Data="{StaticResource delete_regular}" />
+                </Button>
+                <TextBlock Text="{Binding}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </StackPanel>
+              <!-- </Panel> -->
+            </Border>
+        </DataTemplate>
+      </ItemsRepeater.ItemTemplate>
+    </ItemsRepeater>
+    <TextBlock Text="Tags that will be added: " IsVisible="{Binding HasPendingNewTags}" />
+    <WrapPanel Width="{Binding $parent[ScrollContentPresenter].Bounds.Width, Mode=OneWay}">
+      <ItemsRepeater Items="{Binding PendingNewTags}">
+        <ItemsRepeater.Layout>
+          <WrapLayout Orientation="Horizontal" />
+        </ItemsRepeater.Layout>
+        <ItemsRepeater.ItemTemplate>
+          <DataTemplate>
+            <Border CornerRadius="10" Padding="4" BorderBrush="Black"
+                    BorderThickness="2">
+              <StackPanel Spacing="5" Orientation="Horizontal">
+                <Button Name="DeletePendingTagButton" HorizontalAlignment="Center" Height="25" Width="25" Command="{Binding DataContext.RemovePendingNewTag, RelativeSource={RelativeSource AncestorType=ItemsRepeater}}" CommandParameter="{Binding }">
+                  <PathIcon Height="18" Width="18" Data="{StaticResource delete_regular}"/>
+                </Button>
+                <TextBlock Text="{Binding }" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsRepeater.ItemTemplate>
+      </ItemsRepeater>
+    </WrapPanel>
+    <TextBlock Text="Tags that will be removed: " IsVisible="{Binding HasTagsPendingRemoval}" />
+    <ItemsRepeater Items="{Binding PendingRemovalTags}">
+      <ItemsRepeater.Layout>
+        <WrapLayout Orientation="Horizontal" />
+      </ItemsRepeater.Layout>
+      <ItemsRepeater.ItemTemplate>
+        <DataTemplate>
+          <Border CornerRadius="10" Padding="4" BorderBrush="Black"
+                  BorderThickness="2">
+            <StackPanel Spacing="5" Orientation="Horizontal">
+              <Button Name="DeletePendingTagButton" HorizontalAlignment="Center" Height="25" Width="25" Command="{Binding DataContext.CancelTagRemoval, RelativeSource={RelativeSource AncestorType=ItemsRepeater}}" CommandParameter="{Binding }">
+                <PathIcon Height="18" Width="18" Data="{StaticResource arrow_undo_regular}"/>
+              </Button>
+              <TextBlock Text="{Binding }" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsRepeater.ItemTemplate>
+    </ItemsRepeater>
+    <!-- TODO: Exclude tags from the AutoCompleteBox that are already pat of ExistingTags -->
+    <AutoCompleteBox Items="{Binding Tags}" Name="TagSuggestionsBox">
+      <AutoCompleteBox.KeyBindings>
+        <KeyBinding Gesture="Enter" Command="{Binding AddTagCommand}" CommandParameter="{Binding ElementName=TagSuggestionsBox}"/>
+      </AutoCompleteBox.KeyBindings>
+    </AutoCompleteBox>
+    <!-- UpdateSourceTrigger=PropertyChanged -->
+
+    <StackPanel
+      Orientation="Horizontal"
+      HorizontalAlignment="Right">
+      <Button
+        Content="OK"
+        Command="{Binding OkCommand}"
+        IsDefault="True" />
+      <Button
+        Content="Cancel" Command="{Binding Cancel}"
+        IsCancel="True" />
+    </StackPanel>
+  </StackPanel>
+  </Border>
+</Window>
+

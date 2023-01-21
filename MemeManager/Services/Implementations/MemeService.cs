@@ -15,11 +15,13 @@ namespace MemeManager.Services.Implementations;
 public class MemeService : IMemeService
 {
     private readonly MemeManagerContext _context;
+    private readonly IDbChangeNotifier _dbChangeNotifier;
     private readonly ILogger _log;
 
-    public MemeService(MemeManagerContext context, ILogger logger)
+    public MemeService(MemeManagerContext context, IDbChangeNotifier dbChangeNotifier, ILogger logger)
     {
         _context = context;
+        _dbChangeNotifier = dbChangeNotifier;
         _log = logger;
     }
 
@@ -53,11 +55,55 @@ public class MemeService : IMemeService
     public Meme? DeleteById(int id)
     {
         var existingMeme = _context.Memes.SingleOrDefault(m => m.Id == id);
-        return existingMeme != null ? _context.Memes.Remove(existingMeme).Entity : null;
+        try
+        {
+            return existingMeme != null ? _context.Memes.Remove(existingMeme).Entity : null;
+        }
+        finally
+        {
+            _context.SaveChanges();
+        }
+    }
+
+    public Meme SetCategory(Meme meme, Category? category)
+    {
+        meme.Category = category;
+        //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Category) });
+        return meme;
+    }
+
+    public Meme SetTags(Meme meme, params Tag[] tags)
+    {
+        meme.Tags = tags;
+        //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Tag) });
+        return meme;
+    }
+
+    public Meme AddTag(Meme meme, Tag tag)
+    {
+        meme.Tags.Add(tag);
+        //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Tag) });
+        return meme;
+    }
+
+    public Meme RemoveTag(Meme meme, Tag tag)
+    {
+        meme.Tags.Remove(tag);
+        //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Tag) });
+        return meme;
     }
 
     private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)
     {
+        // TODO: Maybe add an option to include memes from all child categories as well
         _log.LogDebug("Starting search for category {CategoryName}...", category?.Name);
         var query = _context.Memes
             // Return all memes if the category is null. Otherwise, filter by the category.
@@ -71,7 +117,7 @@ public class MemeService : IMemeService
                     // ,
                     // TODO: This seems to select all memes. It needs to select all tags that contain the search string.
                     // x => x.Tags.Select(t => t.Name).Aggregate((s1, s2) => $"{s1} {s2}")
-                    )
+                )
                 .Containing(searchTerms?.Split(' '))
                 // Call this function last to help with compatability issue https://github.com/ninjanye/SearchExtensions/issues/40
                 .Apply();

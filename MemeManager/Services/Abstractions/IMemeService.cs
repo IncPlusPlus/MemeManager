@@ -17,4 +17,10 @@ public interface IMemeService
     Meme Create(Meme newMeme);
 
     Meme? DeleteById(int id);
+
+    Meme SetCategory(Meme meme, Category? category);
+
+    Meme SetTags(Meme meme, params Tag[] tags);
+    Meme AddTag(Meme meme, Tag tag);
+    Meme RemoveTag(Meme meme, Tag tag);
 }

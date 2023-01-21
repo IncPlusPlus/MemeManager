@@ -12,4 +12,8 @@ public interface ICategoryService
     Category? GetById(int id);
 
     Category Create(Category newCategory);
+
+    void Delete(params Category[] categories);
+
+    Category Rename(Category category, string name);
 }

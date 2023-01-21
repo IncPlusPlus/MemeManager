@@ -9,36 +9,74 @@
     <Design.DataContext>
         <implementations:MemesListViewModel/>
     </Design.DataContext>
+  <UserControl.Resources>
+    <implementations:ChangeCategorySelectorConverter x:Key="SetCategoryConverterHelper"/>
+  </UserControl.Resources>
     <!-- https://github.com/AvaloniaUI/Avalonia/discussions/5517#discussion-3228287 for grid-like stuff -->
-    <ListBox Items="{Binding SearchResults, Mode=OneWay}" >
-        <ListBox.ItemsPanel>
+     <ListBox Items="{Binding SearchResults, Mode=OneWay}" Name="MemesListBox" SelectionMode="Multiple">
+       <ListBox.Styles>
+         <!-- The drag and drop behavior isn't working quite how I'd like so this is disabled at the moment in favor of a custom implementation. See https://github.com/IncPlusPlus/MemeManager/issues/34 for details -->
+         <!-- <Style Selector="ListBox"> -->
+         <!--   <Setter Property="(Interaction.Behaviors)"> -->
+         <!--     <BehaviorCollectionTemplate> -->
+         <!--       <BehaviorCollection> -->
+         <!--         <ContextDragBehavior HorizontalDragThreshold="3" VerticalDragThreshold="3" /> -->
+         <!--       </BehaviorCollection> -->
+         <!--     </BehaviorCollectionTemplate> -->
+         <!--   </Setter> -->
+         <!-- </Style> -->
+         <Style Selector="ListBoxItem">
+           <!--Defines a context menu for each ListBoxItem-->
+           <Setter Property="ContextMenu">
+             <Setter.Value>
+               <!-- TODO: Currently only leaf nodes will fire the SetCategoryCommand. See https://github.com/AvaloniaUI/Avalonia/discussions/8871 for progress on this issue. Tracked in https://github.com/IncPlusPlus/MemeManager/issues/44 -->
+               <!-- TODO: Examine the description of TreeView's SelectedItem prop. "Note that setting this property only currently works if the item is expanded to be visible. To select non-expanded nodes use `Selection.SelectedIndex`.". Is there something similar for this case that'd let us select non-expanded items in the context menu? -->
+               <ContextMenu DataContext="{Binding $parent[ListBoxItem].DataContext}" Name="ListBoxItemContextMenu">
+                <MenuItem Header="Set Category" Items="{Binding $parent[UserControl].DataContext.Categories, Mode=OneWay}" Name="SetCategoryButton">
+                  <MenuItem.Styles>
+                    <!-- https://github.com/AvaloniaUI/Avalonia/issues/3100#issuecomment-753452752 -->
+                    <Style Selector="MenuItem > MenuItem">
+                      <!-- TODO: Show checked icon if meme is in this category -->
+                      <!-- <Setter Property="Icon" Value="{Binding Icon}"/> -->
+                      <!-- <Setter Property="Header" Value="{Binding LanguageCode}"/> -->
+                      <Setter Property="Header" Value="{Binding Name}"/>
+                      <Setter Property="Items" Value="{Binding Children}"/>
+                      <Setter Property="Command" Value="{Binding $parent[UserControl].DataContext.SetCategoryCommand}"/>
+                      <!-- <Setter Property="CommandParameter" Value="{Binding}"/> -->
+                      <Setter Property="CommandParameter">
+                        <MultiBinding Converter="{StaticResource SetCategoryConverterHelper}">
+                          <!-- The currently selected memes when the context menu was open -->
+                          <Binding ElementName="MemesListBox" Path="SelectedItems" />
+                          <!-- This is pretty much the same thing as if we had typed <Setter Property="CommandParameter" Value="{Binding}"/> except it's in a MultiBinding -->
+                          <!-- See https://stackoverflow.com/a/15336766/1687436 https://stackoverflow.com/a/67946628/1687436 https://stackoverflow.com/a/28949096/1687436 -->
+                          <Binding/>
+
+                          <!-- Gets the object the ContextMenu was created on -->
+                          <!-- <Binding ElementName="ListBoxItemContextMenu" Path="DataContext"/> -->
+                          <!-- The category that is selected in the Set Category submenu -->
+                          <!-- <Binding ElementName="SetCategoryButton" Path="Selection.SelectedItem"></Binding> -->
+                          <!-- <Binding ElementName="SetCategoryButton" Path="DataContext"></Binding> -->
+                        </MultiBinding>
+                      </Setter>
+                    </Style>
+                  </MenuItem.Styles>
+                </MenuItem>
+               <MenuItem Header="Set Tags"
+                         Command="{Binding $parent[UserControl].DataContext.ImplicitShowDialogCommand}" CommandParameter="{Binding ElementName=MemesListBox, Path=SelectedItems}" />
+               </ContextMenu>
+            </Setter.Value>
+          </Setter>
+         </Style>
+      </ListBox.Styles>
+      <ListBox.ItemsPanel>
             <ItemsPanelTemplate>
                 <WrapPanel Width="{Binding $parent[ScrollContentPresenter].Bounds.Width, Mode=OneWay}"/>
             </ItemsPanelTemplate>
         </ListBox.ItemsPanel>
         <ListBox.ItemTemplate>
             <DataTemplate>
-                <local:FileView Margin="0 0 20 20" />
-                <!-- <StackPanel Orientation="Horizontal"> -->
-                <!--     <TextBlock Text="{Binding Id, Mode=TwoWay}"></TextBlock> -->
-                <!--     <TextBlock Text="{Binding Name, Mode=OneWay}" Margin="5,0,0,0" ></TextBlock> -->
-                <!-- </StackPanel> -->
+                <local:FileView/>
             </DataTemplate>
         </ListBox.ItemTemplate>
     </ListBox>
-    <!-- <DockPanel> -->
-    <!--     ~1~ <Button DockPanel.Dock="Bottom" @1@ -->
-    <!--     ~1~         Command="{Binding $parent[Window].DataContext.AddItem}"> @1@ -->
-    <!--     ~1~     Add an item @1@ -->
-    <!--     ~1~ </Button> @1@ -->
-    <!--     <Grid> -->
-    <!--     <DataGrid Items="{Binding Items}"> -->
-    <!--         ~1~ <ItemsControl.ItemTemplate> @1@ -->
-    <!--             <DataTemplate> -->
-    <!--                 <TextBlock Text="{Binding Name}"/> -->
-    <!--             </DataTemplate> -->
-    <!--         ~1~ </ItemsControl.ItemTemplate> @1@ -->
-    <!--     </DataGrid> -->
-    <!--     </Grid> -->
-    <!-- </DockPanel> -->
 </UserControl>

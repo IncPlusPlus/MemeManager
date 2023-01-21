@@ -1,5 +1,4 @@
-﻿using System;
-using System.Dynamic;
+﻿using System.Dynamic;
 using System.IO;
 using Avalonia.Controls.ApplicationLifetimes;
 using MemeManager.Services.Abstractions;
@@ -15,11 +14,12 @@ namespace MemeManager.Services.Implementations;
 
 public class LifecycleService : ILifecycleService
 {
+    private readonly LayoutConfiguration _layoutConfig;
     private readonly ILogger _log;
     private readonly MemesConfiguration _memesConfig;
-    private readonly LayoutConfiguration _layoutConfig;
 
-    public LifecycleService(ILogger logger, MemesConfiguration memesConfiguration, LayoutConfiguration layoutConfiguration)
+    public LifecycleService(ILogger logger, MemesConfiguration memesConfiguration,
+        LayoutConfiguration layoutConfiguration)
     {
         _log = logger;
         _memesConfig = memesConfiguration;
@@ -27,9 +27,11 @@ public class LifecycleService : ILifecycleService
         App.ShuttingDown += HandleShutdown;
     }
 
-    private void HandleShutdown(object? sender, ControlledApplicationLifetimeExitEventArgs controlledApplicationLifetimeExitEventArgs)
+    private void HandleShutdown(object? sender,
+        ControlledApplicationLifetimeExitEventArgs controlledApplicationLifetimeExitEventArgs)
     {
-        _log.LogInformation("Shutting down with exit code {ExitCode}", controlledApplicationLifetimeExitEventArgs.ApplicationExitCode);
+        _log.LogInformation("Shutting down with exit code {ExitCode}",
+            controlledApplicationLifetimeExitEventArgs.ApplicationExitCode);
         PersistConfigInYaml();
     }
 
@@ -64,7 +66,6 @@ public class LifecycleService : ILifecycleService
 
         // Overwrite appsettings.yaml with the updated values
         File.WriteAllText("appsettings.yaml", yamlString);
-        Console.WriteLine();
     }
 }
 

@@ -12,7 +12,27 @@
     <UserControl.Resources>
         <implementations:ThumbnailPathToBitmapConverter x:Key="VariableImage"/>
     </UserControl.Resources>
-    <StackPanel Spacing="5" Width="200">
+    <!-- The drag and drop behavior from the AvaloniaBehaviors library doesn't quite work as expected. When using it
+    if you want to drag multiple items, you have to be holding CTRL then click+hold on the last item you want to select
+    and start dragging it. This is intuitive for someone who figures out this trick but unintuitive to all other users.
+    
+    When using the regular PointerPressed event, you can CTRL+click all the items you intend to drag, let go of CTRL,
+    and start dragging your selection by clicking and dragging any of the selected elements.
+    
+    See https://github.com/IncPlusPlus/MemeManager/issues/34. -->
+    
+    <!-- <Border.Styles> -->
+    <!--   <Style Selector="Border"> -->
+    <!--     <Setter Property="(Interaction.Behaviors)"> -->
+    <!--       <BehaviorCollectionTemplate> -->
+    <!--         <BehaviorCollection> -->
+    <!--           <ContextDragBehavior HorizontalDragThreshold="3" VerticalDragThreshold="3" /> -->
+    <!--         </BehaviorCollection> -->
+    <!--       </BehaviorCollectionTemplate> -->
+    <!--     </Setter> -->
+    <!--   </Style> -->
+    <!-- </Border.Styles> -->
+    <StackPanel Spacing="5" Width="200" >
         <Border CornerRadius="10" ClipToBounds="True">
             <Panel Background="#7FFF22DD">
                 <Image Width="200" Stretch="Uniform" Source="{Binding Thumbnail, Converter={StaticResource VariableImage}}" />

@@ -18,7 +18,7 @@ public class SearchbarViewModel : ReactiveObject, ISearchbarViewModel
         this.WhenAnyValue(x => x.SearchText)
             .Throttle(TimeSpan.FromMilliseconds(400))
             .ObserveOn(RxApp.MainThreadScheduler)
-            .Subscribe(NotifyObserver!);
+            .Subscribe(NotifyObserver);
     }
 
     public string? SearchText
@@ -27,7 +27,7 @@ public class SearchbarViewModel : ReactiveObject, ISearchbarViewModel
         set => this.RaiseAndSetIfChanged(ref _searchText, value);
     }
 
-    private async void NotifyObserver(string s)
+    private void NotifyObserver(string? s)
     {
         _filterObserver.CurrentSearchTerms = s;
     }

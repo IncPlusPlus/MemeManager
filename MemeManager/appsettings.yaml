@@ -3,7 +3,8 @@
     - Serilog.Sinks.Console
     - Serilog.Sinks.File
   MinimumLevel:
-    Default: Debug
+    # See https://stackoverflow.com/a/67738563/1687436 for Serilog logging levels
+    Default: Information
     Override:
       Microsoft: Warning
       System: Warning
