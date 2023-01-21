@@ -45,6 +45,11 @@ public class MemeService : IMemeService
         return _context.Memes.AsNoTracking().SingleOrDefault(m => m.Id == id);
     }
 
+    public Meme? GetByPath(string path)
+    {
+        return _context.Memes.AsNoTracking().SingleOrDefault(m => m.Path == path);
+    }
+
     public Meme Create(Meme newMeme)
     {
         _context.Memes.Add(newMeme);

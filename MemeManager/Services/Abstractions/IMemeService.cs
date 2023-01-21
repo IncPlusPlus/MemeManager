@@ -14,6 +14,8 @@ public interface IMemeService
 
     Meme? GetById(int id);
 
+    Meme? GetByPath(string path);
+
     Meme Create(Meme newMeme);
 
     Meme? DeleteById(int id);

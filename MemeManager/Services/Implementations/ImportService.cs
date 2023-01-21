@@ -56,6 +56,9 @@ public class ImportService : IImportService
             var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
             foreach (var file in files)
             {
+                // Skip memes we already know about
+                if (_memeService.GetByPath(file) != null)
+                    continue;
                 var fileInfo = new FileInfo(file);
                 var memeType = ClassifyFile(fileInfo);
                 var memeCategory = CreateCategoryIfNotExists(path, file);
