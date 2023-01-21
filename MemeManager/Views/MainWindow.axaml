@@ -33,23 +33,41 @@
     <!-- </DockPanel> -->
 
     <DockPanel>
+      <Menu DockPanel.Dock="Top">
+        <MenuItem Header="_File">
+          <MenuItem Header="_Add memes folder..." Command="{Binding ImportCommand}"/>
+          <Separator/>
+          <MenuItem Header="E_xit"/>
+        </MenuItem>
+        <!-- <MenuItem Header="_Edit"> -->
+        <!--   <MenuItem Header="Copy"/> -->
+        <!--   <MenuItem Header="Paste"/> -->
+        <!-- </MenuItem> -->
+        <!-- <MenuItem Header="_Help"> -->
+        <!--   <MenuItem Header="Check for Updates"/> -->
+        <!--   <MenuItem Header="About"/> -->
+        <!-- </MenuItem> -->
+      </Menu>
+      
+      <DockPanel>
         <main:SearchbarView DataContext="{Binding SearchbarViewModel}" DockPanel.Dock="Top" />
         <Grid>
-            <!-- <Grid.RowDefinitions> -->
-            <!--     <RowDefinition Height="Auto" /> -->
-            <!--     <RowDefinition Height="*" /> -->
-            <!--     <RowDefinition Height="Auto" /> -->
-            <!-- </Grid.RowDefinitions> -->
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="4*" />
-            </Grid.ColumnDefinitions>
-            <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" />
-            <GridSplitter Grid.Row="0" Grid.Column="1" ShowsPreview="False"
-                          HorizontalAlignment="Stretch" />
-            <main:MemeListView Grid.Row="0" Grid.Column="2" DataContext="{Binding MemesListViewModel}" />
+          <!-- <Grid.RowDefinitions> -->
+          <!--     <RowDefinition Height="Auto" /> -->
+          <!--     <RowDefinition Height="*" /> -->
+          <!--     <RowDefinition Height="Auto" /> -->
+          <!-- </Grid.RowDefinitions> -->
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="4*" />
+          </Grid.ColumnDefinitions>
+          <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" />
+          <GridSplitter Grid.Row="0" Grid.Column="1" ShowsPreview="False"
+                        HorizontalAlignment="Stretch" />
+          <main:MemeListView Grid.Row="0" Grid.Column="2" DataContext="{Binding MemesListViewModel}" />
         </Grid>
+      </DockPanel>
     </DockPanel>
 
     <!-- <Grid RowDefinitions="35,Auto,*,Auto"> -->

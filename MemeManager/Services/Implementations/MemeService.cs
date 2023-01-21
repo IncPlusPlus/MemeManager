@@ -49,6 +49,7 @@ public class MemeService : IMemeService
     {
         _context.Memes.Add(newMeme);
         _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
         return newMeme;
     }
 

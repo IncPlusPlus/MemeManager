@@ -57,7 +57,8 @@ public static class ViewModelsBootstrapper
             resolver.GetRequiredService<ISearchbarViewModel>(),
             resolver.GetRequiredService<ICategoriesListViewModel>(),
             resolver.GetRequiredService<IMemesListViewModel>(),
-            resolver.GetRequiredService<LayoutConfiguration>()
+            resolver.GetRequiredService<LayoutConfiguration>(),
+            resolver.GetRequiredService<IImportService>()
         ));
         services.RegisterLazySingleton<IChangeTagsCustomDialogViewModel>(() =>
             new ChangeTagsCustomDialogViewModel(memeService, tagService));
