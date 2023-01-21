@@ -56,6 +56,7 @@
 
   <ItemGroup>
     <Folder Include="Configuration" />
+    <Folder Include="Migrations" />
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
     <Folder Include="Views\Dialogs" />

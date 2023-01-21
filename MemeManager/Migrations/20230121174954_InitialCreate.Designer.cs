@@ -11,13 +11,18 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MemeManager.Migrations
 {
     [DbContext(typeof(MemeManagerContext))]
-    [Migration("20220806200240_AddParentAndChildrenCategories")]
-    partial class AddParentAndChildrenCategories
+    [Migration("20230121174954_InitialCreate")]
+    partial class InitialCreate
     {
+        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.7");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "7.0.1")
+                .HasAnnotation("Proxies:ChangeTracking", false)
+                .HasAnnotation("Proxies:CheckEquality", false)
+                .HasAnnotation("Proxies:LazyLoading", true);
 
             modelBuilder.Entity("MemeManager.Persistence.Entity.Category", b =>
                 {
@@ -56,7 +61,7 @@ namespace MemeManager.Migrations
                     b.Property<string>("CachedThumbnailPath")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int?>("CategoryId")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("HasBeenCategorized")
@@ -126,9 +131,7 @@ namespace MemeManager.Migrations
                 {
                     b.HasOne("MemeManager.Persistence.Entity.Category", "Category")
                         .WithMany("Memes")
-                        .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CategoryId");
 
                     b.Navigation("Category");
                 });
