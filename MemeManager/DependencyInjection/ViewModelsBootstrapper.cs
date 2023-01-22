@@ -41,6 +41,8 @@ public static class ViewModelsBootstrapper
     {
         var dbChangeNotifier = resolver.GetRequiredService<IDbChangeNotifier>();
         var filtersObserver = resolver.GetRequiredService<IFilterObserverService>();
+        // Do NOT try to reuse an instance of IDialogService here. Use resolver.GetRequiredService<IDialogService>() every time you need it.
+        // Don't ask me why but it makes the UI totally unresponsive if you reuse the same instance. I don't understand it. I will not attempt to understand it.
 
         var memeService = resolver.GetRequiredService<IMemeService>();
         var categoryService = resolver.GetRequiredService<ICategoryService>();
@@ -48,12 +50,13 @@ public static class ViewModelsBootstrapper
         services.RegisterLazySingleton<ISearchbarViewModel>(() =>
             new SearchbarViewModel(filtersObserver));
         services.RegisterLazySingleton<ICategoriesListViewModel>(() =>
-            new CategoriesListViewModel(resolver.GetRequiredService<IDialogService>(), filtersObserver, dbChangeNotifier, categoryService, memeService));
+            new CategoriesListViewModel(resolver.GetRequiredService<IDialogService>(), filtersObserver, dbChangeNotifier, categoryService,
+                memeService));
         services.RegisterLazySingleton<IMemesListViewModel>(() =>
-            new MemesListViewModel(resolver.GetRequiredService<ILogger>(),
-                resolver.GetRequiredService<IDialogService>(), filtersObserver, dbChangeNotifier, memeService,
-                categoryService));
+            new MemesListViewModel(resolver.GetRequiredService<ILogger>(), resolver.GetRequiredService<IDialogService>(), filtersObserver,
+                dbChangeNotifier, memeService, categoryService));
         services.RegisterLazySingleton<IMainWindowViewModel>(() => new MainWindowViewModel(
+            resolver.GetRequiredService<IDialogService>(),
             resolver.GetRequiredService<ISearchbarViewModel>(),
             resolver.GetRequiredService<ICategoriesListViewModel>(),
             resolver.GetRequiredService<IMemesListViewModel>(),
@@ -63,6 +66,8 @@ public static class ViewModelsBootstrapper
         services.RegisterLazySingleton<IChangeTagsCustomDialogViewModel>(() =>
             new ChangeTagsCustomDialogViewModel(memeService, tagService));
         services.RegisterLazySingleton<INewCategoryDialogViewModel>(() => new NewCategoryDialogViewModel());
+        services.RegisterLazySingleton<ISelectFolderDialogViewModel>(() =>
+            new SelectFolderDialogViewModel(resolver.GetRequiredService<IDialogService>()));
     }
 
     private static void RegisterFactories(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)

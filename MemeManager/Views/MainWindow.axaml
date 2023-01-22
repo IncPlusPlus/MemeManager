@@ -8,77 +8,77 @@
         x:Class="MemeManager.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="MemeManager">
-    <Design.DataContext>
-        <implementations:MainWindowViewModel />
-    </Design.DataContext>
+  <Design.DataContext>
+    <implementations:MainWindowViewModel />
+  </Design.DataContext>
 
-    <!-- TODO: Look into the <Window.KeyBindings> tag as seen in Camelot's MainWindow.xaml -->
+  <!-- TODO: Look into the <Window.KeyBindings> tag as seen in Camelot's MainWindow.xaml -->
 
-    <!-- Similar setup to Jaya's MainView.xaml -->
-    <!-- <DockPanel> -->
-    <!--     <main:SearchbarView DataContext="{Binding SearchBarViewModel}" DockPanel.Dock="Top"/> -->
-    <!--     <Grid> -->
-    <!--         <Grid.ColumnDefinitions> -->
-    <!--             <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" /> -->
-    <!--             <ColumnDefinition Width="Auto" /> -->
-    <!--             <ColumnDefinition Width="*" /> -->
-    <!--             ~1~ <ColumnDefinition Width="Auto" /> @1@ -->
-    <!--             ~1~ <ColumnDefinition Width="{Binding $parent[DockPanel].DataContext.PaneConfig.PreviewOrDetailsPanePaneWidth, Mode=OneWay}" /> @1@ -->
-    <!--         </Grid.ColumnDefinitions> -->
-    <!--         <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" /> -->
-    <!--         <GridSplitter Grid.Column="1" ShowsPreview="False" -->
-    <!--                       HorizontalAlignment="Stretch" /> -->
-    <!--         <main:MemeListView Grid.Column="2" DataContext="{Binding MemesListViewModel}" /> -->
-    <!--         </Grid> -->
-    <!-- </DockPanel> -->
+  <!-- Similar setup to Jaya's MainView.xaml -->
+  <!-- <DockPanel> -->
+  <!--     <main:SearchbarView DataContext="{Binding SearchBarViewModel}" DockPanel.Dock="Top"/> -->
+  <!--     <Grid> -->
+  <!--         <Grid.ColumnDefinitions> -->
+  <!--             <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" /> -->
+  <!--             <ColumnDefinition Width="Auto" /> -->
+  <!--             <ColumnDefinition Width="*" /> -->
+  <!--             ~1~ <ColumnDefinition Width="Auto" /> @1@ -->
+  <!--             ~1~ <ColumnDefinition Width="{Binding $parent[DockPanel].DataContext.PaneConfig.PreviewOrDetailsPanePaneWidth, Mode=OneWay}" /> @1@ -->
+  <!--         </Grid.ColumnDefinitions> -->
+  <!--         <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" /> -->
+  <!--         <GridSplitter Grid.Column="1" ShowsPreview="False" -->
+  <!--                       HorizontalAlignment="Stretch" /> -->
+  <!--         <main:MemeListView Grid.Column="2" DataContext="{Binding MemesListViewModel}" /> -->
+  <!--         </Grid> -->
+  <!-- </DockPanel> -->
+
+  <DockPanel>
+    <Menu DockPanel.Dock="Top">
+      <MenuItem Header="_File">
+        <MenuItem Header="_Import from directory..." Command="{Binding ImportCommand}" />
+        <Separator />
+        <MenuItem Header="E_xit" />
+      </MenuItem>
+      <!-- <MenuItem Header="_Edit"> -->
+      <!--   <MenuItem Header="Copy"/> -->
+      <!--   <MenuItem Header="Paste"/> -->
+      <!-- </MenuItem> -->
+      <!-- <MenuItem Header="_Help"> -->
+      <!--   <MenuItem Header="Check for Updates"/> -->
+      <!--   <MenuItem Header="About"/> -->
+      <!-- </MenuItem> -->
+    </Menu>
 
     <DockPanel>
-      <Menu DockPanel.Dock="Top">
-        <MenuItem Header="_File">
-          <MenuItem Header="_Add memes folder..." Command="{Binding ImportCommand}"/>
-          <Separator/>
-          <MenuItem Header="E_xit"/>
-        </MenuItem>
-        <!-- <MenuItem Header="_Edit"> -->
-        <!--   <MenuItem Header="Copy"/> -->
-        <!--   <MenuItem Header="Paste"/> -->
-        <!-- </MenuItem> -->
-        <!-- <MenuItem Header="_Help"> -->
-        <!--   <MenuItem Header="Check for Updates"/> -->
-        <!--   <MenuItem Header="About"/> -->
-        <!-- </MenuItem> -->
-      </Menu>
-      
-      <DockPanel>
-        <main:SearchbarView DataContext="{Binding SearchbarViewModel}" DockPanel.Dock="Top" />
-        <Grid>
-          <!-- <Grid.RowDefinitions> -->
-          <!--     <RowDefinition Height="Auto" /> -->
-          <!--     <RowDefinition Height="*" /> -->
-          <!--     <RowDefinition Height="Auto" /> -->
-          <!-- </Grid.RowDefinitions> -->
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" />
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="4*" />
-          </Grid.ColumnDefinitions>
-          <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" />
-          <GridSplitter Grid.Row="0" Grid.Column="1" ShowsPreview="False"
-                        HorizontalAlignment="Stretch" />
-          <main:MemeListView Grid.Row="0" Grid.Column="2" DataContext="{Binding MemesListViewModel}" />
-        </Grid>
-      </DockPanel>
+      <main:SearchbarView DataContext="{Binding SearchbarViewModel}" DockPanel.Dock="Top" />
+      <Grid>
+        <!-- <Grid.RowDefinitions> -->
+        <!--     <RowDefinition Height="Auto" /> -->
+        <!--     <RowDefinition Height="*" /> -->
+        <!--     <RowDefinition Height="Auto" /> -->
+        <!-- </Grid.RowDefinitions> -->
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="{Binding LeftPanelWidth, Mode=TwoWay}" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="4*" />
+        </Grid.ColumnDefinitions>
+        <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" />
+        <GridSplitter Grid.Row="0" Grid.Column="1" ShowsPreview="False"
+                      HorizontalAlignment="Stretch" />
+        <main:MemeListView Grid.Row="0" Grid.Column="2" DataContext="{Binding MemesListViewModel}" />
+      </Grid>
     </DockPanel>
+  </DockPanel>
 
-    <!-- <Grid RowDefinitions="35,Auto,*,Auto"> -->
-    <!--     <Grid> -->
-    <!--         <main:SearchbarView DataContext="{Binding SearchbarViewModel}"></main:SearchbarView> -->
-    <!--     </Grid> -->
-    <!--     <Grid Grid.Row="2" ColumnDefinitions="*,Auto,4*"> -->
-    <!--         <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" /> -->
-    <!--         <GridSplitter Grid.Column="1" ShowsPreview="False" -->
-    <!--                       HorizontalAlignment="Stretch" /> -->
-    <!--         <main:MemeListView Grid.Column="2" DataContext="{Binding MemesListViewModel}" /> -->
-    <!--     </Grid> -->
-    <!-- </Grid> -->
+  <!-- <Grid RowDefinitions="35,Auto,*,Auto"> -->
+  <!--     <Grid> -->
+  <!--         <main:SearchbarView DataContext="{Binding SearchbarViewModel}"></main:SearchbarView> -->
+  <!--     </Grid> -->
+  <!--     <Grid Grid.Row="2" ColumnDefinitions="*,Auto,4*"> -->
+  <!--         <main:CategoriesListView DataContext="{Binding CategoriesListViewModel}" /> -->
+  <!--         <GridSplitter Grid.Column="1" ShowsPreview="False" -->
+  <!--                       HorizontalAlignment="Stretch" /> -->
+  <!--         <main:MemeListView Grid.Column="2" DataContext="{Binding MemesListViewModel}" /> -->
+  <!--     </Grid> -->
+  <!-- </Grid> -->
 </Window>

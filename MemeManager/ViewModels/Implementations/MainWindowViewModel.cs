@@ -1,5 +1,7 @@
-﻿using System.Windows.Input;
+﻿using System.Threading.Tasks;
+using System.Windows.Input;
 using Avalonia.Controls;
+using HanumanInstitute.MvvmDialogs;
 using MemeManager.Services.Abstractions;
 using MemeManager.ViewModels.Configuration;
 using MemeManager.ViewModels.Interfaces;
@@ -9,19 +11,21 @@ namespace MemeManager.ViewModels.Implementations
 {
     public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
     {
+        private readonly IDialogService _dialogService;
         private readonly IImportService _importService;
         private readonly LayoutConfiguration _layoutConfig;
 
-        public MainWindowViewModel(ISearchbarViewModel searchbarViewModel,
+        public MainWindowViewModel(IDialogService dialogService, ISearchbarViewModel searchbarViewModel,
             ICategoriesListViewModel categoriesListViewModel,
             IMemesListViewModel memesListViewModel, LayoutConfiguration layoutConfig, IImportService importService)
         {
+            _dialogService = dialogService;
             SearchbarViewModel = searchbarViewModel;
             CategoriesListViewModel = categoriesListViewModel;
             MemesListViewModel = memesListViewModel;
             _layoutConfig = layoutConfig;
             _importService = importService;
-            ImportCommand = ReactiveCommand.Create(Import);
+            ImportCommand = ReactiveCommand.CreateFromTask(OpenImportDialog);
         }
 
         public ICommand ImportCommand { get; }
@@ -36,9 +40,14 @@ namespace MemeManager.ViewModels.Implementations
         public ICategoriesListViewModel CategoriesListViewModel { get; }
         public IMemesListViewModel MemesListViewModel { get; }
 
-        private void Import()
+        private async Task OpenImportDialog()
         {
-            _importService.ImportFromDirectory(@"C:\Users\reach\Downloads\MyMemes");
+            var dialogViewModel = _dialogService.CreateViewModel<ISelectFolderDialogViewModel>();
+            var success = await _dialogService.ShowDialogAsync<SelectFolderDialog>(this, dialogViewModel).ConfigureAwait(true);
+            if (success == true)
+            {
+                _importService.ImportFromDirectory(dialogViewModel.Path);
+            }
         }
     }
 }
