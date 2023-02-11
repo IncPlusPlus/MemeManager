@@ -25,4 +25,6 @@ public interface IMemeService
     Meme SetTags(Meme meme, params Tag[] tags);
     Meme AddTag(Meme meme, Tag tag);
     Meme RemoveTag(Meme meme, Tag tag);
+
+    Meme SetThumbnailPath(Meme meme, string? thumbnailPath);
 }

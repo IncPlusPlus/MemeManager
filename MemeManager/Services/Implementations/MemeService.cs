@@ -107,6 +107,16 @@ public class MemeService : IMemeService
         return meme;
     }
 
+    public Meme SetThumbnailPath(Meme meme, string? thumbnailPath)
+    {
+        meme.CachedThumbnailPath = thumbnailPath;
+        //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
+        //TODO: The above TODO seems to not be true. Investigate if I still need to make any change pertaining to the above comment.
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
+        return meme;
+    }
+
     private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)
     {
         // TODO: Maybe add an option to include memes from all child categories as well

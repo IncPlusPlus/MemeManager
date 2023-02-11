@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Reactive.Concurrency;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
 using HanumanInstitute.MvvmDialogs;
@@ -44,9 +46,15 @@ namespace MemeManager.ViewModels.Implementations
         {
             var dialogViewModel = _dialogService.CreateViewModel<ISelectFolderDialogViewModel>();
             var success = await _dialogService.ShowDialogAsync<SelectFolderDialog>(this, dialogViewModel).ConfigureAwait(true);
-            if (success == true)
+            if (success == true&&dialogViewModel.Path!=null)
             {
-                _importService.ImportFromDirectory(dialogViewModel.Path);
+                var importedMemes = _importService.ImportFromDirectory(dialogViewModel.Path);
+                RxApp.TaskpoolScheduler.Schedule(() =>
+                {
+                    Task.Delay(3000);
+                     _importService.GenerateThumbnails(importedMemes);
+                });
+                Console.WriteLine();
             }
         }
     }
