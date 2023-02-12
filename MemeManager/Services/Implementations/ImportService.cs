@@ -113,7 +113,6 @@ public class ImportService : IImportService
             catch (Exception e)
             {
                 _log.LogError(e, "Failed to generate thumbnail for meme at path '{MemePath}'", meme.Path);
-                throw;
             }
         }
     }
