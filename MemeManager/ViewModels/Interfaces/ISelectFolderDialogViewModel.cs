@@ -2,7 +2,7 @@ using HanumanInstitute.MvvmDialogs;
 
 namespace MemeManager.ViewModels.Interfaces;
 
-public interface ISelectFolderDialogViewModel : IModalDialogViewModel, ICloseable
+public interface IImportFolderDialogViewModel : IModalDialogViewModel, ICloseable
 {
     string? Path { get; }
 }

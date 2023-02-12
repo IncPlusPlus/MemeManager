@@ -6,9 +6,9 @@ using HanumanInstitute.MvvmDialogs.Avalonia;
 
 namespace MemeManager.ViewModels.Implementations;
 
-public class SelectFolderDialog : IView
+public class ImportFolderDialog : IView
 {
-    private readonly MemeManager.Views.SelectFolderDialog dialog = new();
+    private readonly MemeManager.Views.ImportFolderDialog dialog = new();
     public object RefObj => this;
 
     event EventHandler IView.Loaded

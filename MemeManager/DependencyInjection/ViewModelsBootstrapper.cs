@@ -66,8 +66,8 @@ public static class ViewModelsBootstrapper
         services.RegisterLazySingleton<IChangeTagsCustomDialogViewModel>(() =>
             new ChangeTagsCustomDialogViewModel(memeService, tagService));
         services.RegisterLazySingleton<INewCategoryDialogViewModel>(() => new NewCategoryDialogViewModel());
-        services.RegisterLazySingleton<ISelectFolderDialogViewModel>(() =>
-            new SelectFolderDialogViewModel(resolver.GetRequiredService<IDialogService>()));
+        services.RegisterLazySingleton<IImportFolderDialogViewModel>(() =>
+            new ImportFolderDialogViewModel(resolver.GetRequiredService<IDialogService>()));
     }
 
     private static void RegisterFactories(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)

@@ -10,13 +10,13 @@ using IOPath = System.IO.Path;
 
 namespace MemeManager.ViewModels.Implementations;
 
-public class SelectFolderDialogViewModel : ViewModelBase, ISelectFolderDialogViewModel
+public class ImportFolderDialogViewModel : ViewModelBase, IImportFolderDialogViewModel
 {
     private readonly IDialogService _dialogService;
     private bool? _dialogResult;
     private string? _path;
 
-    public SelectFolderDialogViewModel(IDialogService dialogService)
+    public ImportFolderDialogViewModel(IDialogService dialogService)
     {
         this._dialogService = dialogService;
         OkCommand = ReactiveCommand.Create(Ok);

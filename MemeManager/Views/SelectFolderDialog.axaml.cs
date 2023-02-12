@@ -4,9 +4,9 @@ using Avalonia.Markup.Xaml;
 
 namespace MemeManager.Views;
 
-public partial class SelectFolderDialog : Window
+public partial class ImportFolderDialog : Window
 {
-    public SelectFolderDialog()
+    public ImportFolderDialog()
     {
         InitializeComponent();
 #if DEBUG

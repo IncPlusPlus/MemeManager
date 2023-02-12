@@ -8,9 +8,9 @@
         Width="250"
         Height="80"
         WindowStartupLocation="CenterOwner"
-        x:Class="MemeManager.Views.SelectFolderDialog">
+        x:Class="MemeManager.Views.ImportFolderDialog">
   <Design.DataContext>
-    <implementations:SelectFolderDialogViewModel/>
+    <implementations:ImportFolderDialogViewModel/>
   </Design.DataContext>
   <StackPanel>
     <StackPanel Orientation="Horizontal"

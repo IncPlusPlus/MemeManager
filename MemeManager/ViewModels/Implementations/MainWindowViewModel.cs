@@ -44,8 +44,8 @@ namespace MemeManager.ViewModels.Implementations
 
         private async Task OpenImportDialog()
         {
-            var dialogViewModel = _dialogService.CreateViewModel<ISelectFolderDialogViewModel>();
-            var success = await _dialogService.ShowDialogAsync<SelectFolderDialog>(this, dialogViewModel).ConfigureAwait(true);
+            var dialogViewModel = _dialogService.CreateViewModel<IImportFolderDialogViewModel>();
+            var success = await _dialogService.ShowDialogAsync<ImportFolderDialog>(this, dialogViewModel).ConfigureAwait(true);
             if (success == true&&dialogViewModel.Path!=null)
             {
                 var importedMemes = _importService.ImportFromDirectory(dialogViewModel.Path);
