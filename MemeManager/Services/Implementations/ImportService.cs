@@ -206,6 +206,14 @@ public class ImportService : IImportService
         // Ensure the directory and all its parents exist.
         Directory.CreateDirectory(thumbnailsDir);
         var thumbnailPath = Path.Join(thumbnailsDir, meme.Id+"-"+memeFile.Name+".png");
+
+        var thumbnailFile = new FileInfo(thumbnailPath);
+        // Check if the thumbnail already exists for whatever reason. This can sometimes happen if the DB is deleted and then recreated via an import.
+        // Without this, FFmpeg will exit because the file it's trying to create already exists.
+        if (thumbnailFile.Exists)
+        {
+            thumbnailFile.Delete();
+        }
         
         await Task.Run(async () =>
         {
