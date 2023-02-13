@@ -1,12 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using MemeManager.Persistence;
 using MemeManager.Persistence.Entity;
 
 namespace MemeManager.Services.Abstractions;
 
 public interface IMemeService
 {
+    IMemeService NewInstance(MemeManagerContext separateContext);
     IEnumerable<Meme> GetAll();
 
     IEnumerable<Meme> GetFiltered(Category? category, string? searchTerms);
@@ -27,4 +29,5 @@ public interface IMemeService
     Meme RemoveTag(Meme meme, Tag tag);
 
     Meme SetThumbnailPath(Meme meme, string? thumbnailPath);
+    void SetThumbnailPaths(IEnumerable<(Meme, string?)> thumbnails);
 }

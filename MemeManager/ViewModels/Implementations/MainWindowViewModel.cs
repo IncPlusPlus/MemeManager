@@ -1,5 +1,4 @@
-﻿using System;
-using System.Reactive.Concurrency;
+﻿using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
@@ -46,15 +45,13 @@ namespace MemeManager.ViewModels.Implementations
         {
             var dialogViewModel = _dialogService.CreateViewModel<IImportFolderDialogViewModel>();
             var success = await _dialogService.ShowDialogAsync<ImportFolderDialog>(this, dialogViewModel).ConfigureAwait(true);
-            if (success == true&&dialogViewModel.Path!=null)
+            if (success == true && dialogViewModel.Path != null)
             {
                 var importedMemes = _importService.ImportFromDirectory(dialogViewModel.Path);
                 RxApp.TaskpoolScheduler.Schedule(() =>
                 {
-                    Task.Delay(3000);
-                     _importService.GenerateThumbnails(importedMemes);
+                    _importService.GenerateThumbnails(importedMemes);
                 });
-                Console.WriteLine();
             }
         }
     }
