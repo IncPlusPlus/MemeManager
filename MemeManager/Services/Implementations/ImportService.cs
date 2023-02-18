@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using MemeManager.Persistence;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
@@ -345,6 +346,13 @@ public class ImportService : IImportService
                     currentParent = existingCategory;
                 }
             }
+        }
+
+        if (currentParent != null)
+        {
+            using var context = new MemeManagerContext();
+            // I can't get CategoryService.GetTopLevelCategories() to not fucking return tracked CategoryProxy objects
+            context.Categories.Entry(currentParent).State = EntityState.Detached;
         }
 
         return currentParent;
