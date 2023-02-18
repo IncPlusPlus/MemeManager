@@ -21,6 +21,11 @@ public class TagService : ITagService
         _log = logger;
     }
 
+    public ITagService NewInstance(MemeManagerContext separateContext)
+    {
+        return new TagService(separateContext, _dbChangeNotifier, _log);
+    }
+
     public IEnumerable<Tag> GetAll()
     {
         return _context.Tags.ToList();

@@ -1,0 +1,40 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:implementations="clr-namespace:MemeManager.ViewModels.Implementations"
+        mc:Ignorable="d" d:DesignWidth="250" d:DesignHeight="80"
+        Title="Select folder"
+        Width="250"
+        Height="80"
+        WindowStartupLocation="CenterOwner"
+        x:Class="MemeManager.Views.ImportFolderDialog">
+  <Design.DataContext>
+    <implementations:ImportFolderDialogViewModel/>
+  </Design.DataContext>
+  <StackPanel>
+    <StackPanel Orientation="Horizontal"
+                HorizontalAlignment="Center">
+      <TextBox
+        IsReadOnly="True"
+        Text="{Binding Path, Mode=OneWay}" />
+      <Button
+        Grid.Column="1"
+        Content="Browse..."
+        Command="{Binding BrowseFolderCommand}" />
+    </StackPanel>
+
+    <StackPanel
+      Orientation="Horizontal"
+      HorizontalAlignment="Right">
+      <Button
+        Content="OK"
+        Command="{Binding OkCommand}"
+        IsDefault="True" />
+      <Button
+        Content="Cancel" Command="{Binding Cancel}"
+        IsCancel="True" />
+    </StackPanel>
+  </StackPanel>
+</Window>
+
