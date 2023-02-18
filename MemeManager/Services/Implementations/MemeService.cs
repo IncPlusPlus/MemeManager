@@ -25,11 +25,6 @@ public class MemeService : IMemeService
         _log = logger;
     }
 
-    public IMemeService NewInstance(MemeManagerContext separateContext)
-    {
-        return new MemeService(separateContext, this._dbChangeNotifier, this._log);
-    }
-
     public IEnumerable<Meme> GetAll()
     {
         return _context.Memes.AsNoTracking().ToList();
@@ -120,17 +115,6 @@ public class MemeService : IMemeService
         _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
         return meme;
-    }
-
-    public void SetThumbnailPaths(IEnumerable<(Meme, string?)> thumbnails)
-    {
-        foreach (var tuple in thumbnails)
-        {
-            var (meme, thumbnailPath) = tuple;
-            meme.CachedThumbnailPath = thumbnailPath;
-        }
-        _context.SaveChanges();
-        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
     }
 
     private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)

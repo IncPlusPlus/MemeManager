@@ -22,11 +22,6 @@ public class CategoryService : ICategoryService
     }
 
 
-    public ICategoryService NewInstance(MemeManagerContext separateContext)
-    {
-        return new CategoryService(separateContext, _dbChangeNotifier, _log);
-    }
-
     public IEnumerable<Category> GetAll()
     {
         return _context.Categories.AsNoTracking().ToList();
