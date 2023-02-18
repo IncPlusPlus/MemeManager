@@ -10,11 +10,13 @@ namespace MemeManager.Services.Implementations;
 
 public class CategoryService : ICategoryService
 {
+    private readonly MemeManagerContext _context;
     private readonly IDbChangeNotifier _dbChangeNotifier;
     private readonly ILogger _log;
 
     public CategoryService(MemeManagerContext context, IDbChangeNotifier dbChangeNotifier, ILogger logger)
     {
+        _context = context;
         _dbChangeNotifier = dbChangeNotifier;
         _log = logger;
     }
@@ -27,14 +29,12 @@ public class CategoryService : ICategoryService
 
     public IEnumerable<Category> GetAll()
     {
-        using var context = new MemeManagerContext();
-        return context.Categories.AsNoTracking().ToList();
+        return _context.Categories.AsNoTracking().ToList();
     }
 
     public IEnumerable<Category> GetTopLevelCategories()
     {
-        using var context = new MemeManagerContext();
-        return context.Categories
+        return _context.Categories
             /*
              * Loading just the categories is a simple operation and we don't want to pepper the DB with queries
              * when we want to expand a bunch of categories so we explicitly/eagerly load the children of the
@@ -47,42 +47,35 @@ public class CategoryService : ICategoryService
 
     public Category? GetById(int id)
     {
-        using var context = new MemeManagerContext();
-        return context.Categories.AsNoTracking().SingleOrDefault(c => c.Id == id);
+        return _context.Categories.AsNoTracking().SingleOrDefault(c => c.Id == id);
     }
 
     public Category Create(Category newCategory)
     {
-        using var context = new MemeManagerContext();
-        context.Categories.Attach(newCategory);
-        context.Categories.Add(newCategory);
-        context.SaveChanges();
+        _context.Categories.Add(newCategory);
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
-        // context.Categories.Entry(newCategory).State = EntityState.Detached;
         return newCategory;
     }
 
     public void Delete(params Category[] categories)
     {
-        using var context = new MemeManagerContext();
         // TODO: Figure out what will happen with memes that are in this category. Might need to unset their category manually.
         // TODO: Deal with orphaned memes. Maybe there needs to be a default category named "uncategorized"
         foreach (var category in categories)
         {
             // TODO: If category has any children, they need to be deleted too
-            context.Categories.Remove(category);
+            _context.Categories.Remove(category);
         }
 
-        context.SaveChanges();
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
     }
 
     public Category Rename(Category category, string name)
     {
-        using var context = new MemeManagerContext();
-        context.Categories.Attach(category);
         category.Name = name;
-        context.SaveChanges();
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
         return category;
     }

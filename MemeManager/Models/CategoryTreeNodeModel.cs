@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reactive.Linq;
 using DynamicData.Binding;
 using MemeManager.DependencyInjection;
-using MemeManager.Persistence;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -34,9 +33,6 @@ public class CategoryTreeNodeModel : ReactiveObject
         _name = category.Name;
         _categoryService = categoryService;
         _isExpanded = false;
-        // TODO: This is awful and I hate that I have to do this just to use lazy-loading properties
-        using var context = new MemeManagerContext();
-        context.Categories.Attach(category);
         _hasChildren = category.Children?.Count > 0;
         _memeCount = category.Memes.Count;
 
