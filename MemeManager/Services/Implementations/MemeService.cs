@@ -58,6 +58,13 @@ public class MemeService : IMemeService
         return newMeme;
     }
 
+    public void BulkCreate(IEnumerable<Meme> memes)
+    {
+        _context.Memes.AddRange(memes);
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
+    }
+
     public Meme? DeleteById(int id)
     {
         var existingMeme = _context.Memes.SingleOrDefault(m => m.Id == id);
@@ -115,6 +122,17 @@ public class MemeService : IMemeService
         _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
         return meme;
+    }
+
+    public void SetThumbnailPaths(IEnumerable<(Meme, string?)> thumbnails)
+    {
+        foreach (var tuple in thumbnails)
+        {
+            var (meme, thumbnailPath) = tuple;
+            meme.CachedThumbnailPath = thumbnailPath;
+        }
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
     }
 
     private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)

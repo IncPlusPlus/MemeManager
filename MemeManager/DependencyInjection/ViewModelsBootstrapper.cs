@@ -40,6 +40,7 @@ public static class ViewModelsBootstrapper
     private static void RegisterServices(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)
     {
         var dbChangeNotifier = resolver.GetRequiredService<IDbChangeNotifier>();
+        var importRequestNotifier = resolver.GetRequiredService<IImportRequestNotifier>();
         var filtersObserver = resolver.GetRequiredService<IFilterObserverService>();
         // Do NOT try to reuse an instance of IDialogService here. Use resolver.GetRequiredService<IDialogService>() every time you need it.
         // Don't ask me why but it makes the UI totally unresponsive if you reuse the same instance. I don't understand it. I will not attempt to understand it.
@@ -61,7 +62,8 @@ public static class ViewModelsBootstrapper
             resolver.GetRequiredService<ICategoriesListViewModel>(),
             resolver.GetRequiredService<IMemesListViewModel>(),
             resolver.GetRequiredService<LayoutConfiguration>(),
-            resolver.GetRequiredService<IImportService>()
+            resolver.GetRequiredService<IImportService>(),
+            importRequestNotifier
         ));
         services.RegisterLazySingleton<IChangeTagsCustomDialogViewModel>(() =>
             new ChangeTagsCustomDialogViewModel(memeService, tagService));

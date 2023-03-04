@@ -18,6 +18,8 @@ public interface IMemeService
 
     Meme Create(Meme newMeme);
 
+    void BulkCreate(IEnumerable<Meme> memes);
+
     Meme? DeleteById(int id);
 
     Meme SetCategory(Meme meme, Category? category);
@@ -27,4 +29,5 @@ public interface IMemeService
     Meme RemoveTag(Meme meme, Tag tag);
 
     Meme SetThumbnailPath(Meme meme, string? thumbnailPath);
+    void SetThumbnailPaths(IEnumerable<(Meme, string?)> thumbnails);
 }

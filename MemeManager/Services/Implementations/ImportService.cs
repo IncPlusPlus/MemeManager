@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -32,15 +33,18 @@ public class ImportService : IImportService
     private static readonly string[] s_audioExtensions = new[] { "wav", "flac", "ogg", "mp3", "alac", "aac" };
     private readonly ICategoryService _categoryService;
     private readonly IDbChangeNotifier _dbChangeNotifier;
+    private readonly IImportRequestNotifier _importRequestNotifier;
     private readonly ILogger _log;
     private readonly IMemeService _memeService;
     private readonly ITagService _tagService;
 
-    public ImportService(ILogger logger, IDbChangeNotifier dbChangeNotifier, IMemeService memeService,
+    public ImportService(ILogger logger, IDbChangeNotifier dbChangeNotifier,
+        IImportRequestNotifier importRequestNotifier, IMemeService memeService,
         ICategoryService categoryService, ITagService tagService)
     {
         _log = logger;
         _dbChangeNotifier = dbChangeNotifier;
+        _importRequestNotifier = importRequestNotifier;
         _memeService = memeService;
         _categoryService = categoryService;
         _tagService = tagService;
@@ -56,14 +60,28 @@ public class ImportService : IImportService
      * - Skip generating thumbnails
      * - Files to skip (a regexp for a file name or names)
      */
-    public IEnumerable<Meme> ImportFromDirectory(string path)
+    public void ImportFromDirectory(string path)
     {
-        var importedMemes = new List<Meme>();
+        _log.LogInformation("Scanning path: {MemesPath}", path);
         try
         {
-            _log.LogInformation("IMPORT OF MEMES FROM PATH {MemesPath} STARTING!", path);
             var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-            importedMemes = new List<Meme>(files.Length);
+            _log.LogTrace("Sending {NumFiles} files for processing", files.Length);
+            _importRequestNotifier.SendImportRequest(path, files);
+            _log.LogTrace("Successfully sent the discovered files for processing", files.Length);
+        }
+        catch (Exception e)
+        {
+            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", path);
+        }
+    }
+
+    public void ImportFromPaths(string basePath, string[] files)
+    {
+        _log.LogInformation("Starting import of {NumMemes} from path {MemesPath}", files.Length, basePath);
+        try
+        {
+            var memesToImport = new List<Meme>(files.Length);
             foreach (var file in files)
             {
                 // Skip memes we already know about
@@ -71,9 +89,9 @@ public class ImportService : IImportService
                     continue;
                 var fileInfo = new FileInfo(file);
                 var memeType = ClassifyFile(fileInfo);
-                var memeCategory = CreateCategoryIfNotExists(path, file);
+                var memeCategory = CreateCategoryIfNotExists(basePath, file);
                 // TODO: Maybe add a method to MemeService that allows for adding a list of Meme entities to the DB to avoid frequent DB writes and UI updates (because of the notifier being fired for every new meme)
-                importedMemes.Add(_memeService.Create(new Meme()
+                memesToImport.Add(new Meme()
                 {
                     Path = file,
                     Name = fileInfo.Name,
@@ -81,20 +99,26 @@ public class ImportService : IImportService
                     Category = memeCategory,
                     TimeAdded = DateTime.Now,
                     AdditionalTerms = ""
-                }));
+                });
             }
-            _log.LogInformation("IMPORT OF MEMES FROM PATH {MemesPath} SUCCEEDED!", path);
-            return importedMemes;
+            _log.LogTrace("Created all necessary categories. Attempting to save new memes to the database...");
+            _memeService.BulkCreate(memesToImport);
+            _log.LogInformation("Import of memes from path {MemesPath} succeeded!", basePath);
+            _log.LogTrace("Sending GenerateThumbnailsRequest");
+            _importRequestNotifier.SendGenerateThumbnailsRequest(memesToImport);
+            _log.LogTrace("GenerateThumbnailsRequest sent");
         }
         catch (Exception e)
         {
-            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", path);
-            return importedMemes;
+            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", basePath);
         }
     }
 
     public async Task GenerateThumbnails(IEnumerable<Meme> memes)
     {
+        _log.LogInformation("Starting thumbnail generation");
+        var startTime = Stopwatch.GetTimestamp();
+        var memesAndThumbnailPaths = new List<(Meme, string?)>();
         // TODO: See if this can be parallelized into a threadpool or something so it doesn't take forever to load
         // thumbnails one-by-one in a big library.
         foreach (var meme in memes)
@@ -108,13 +132,21 @@ public class ImportService : IImportService
                     Meme.FileMediaType.Gif => await GenerateThumbnailForGif(meme),
                     _ => null
                 };
-                _memeService.SetThumbnailPath(meme, thumbnailPath);
+                memesAndThumbnailPaths.Add((meme, thumbnailPath));
             }
             catch (Exception e)
             {
                 _log.LogError(e, "Failed to generate thumbnail for meme at path '{MemePath}'", meme.Path);
             }
         }
+        var elapsedTime = Stopwatch.GetElapsedTime(startTime);
+        _log.LogInformation("Finished generating thumbnails in {Time}", elapsedTime);
+        _importRequestNotifier.SendSetThumbnailsRequest(memesAndThumbnailPaths);
+    }
+
+    public void SetThumbnails(IEnumerable<(Meme, string?)> memesAndThumbnailPaths)
+    {
+        _memeService.SetThumbnailPaths(memesAndThumbnailPaths);
     }
 
     private async Task<string?> GenerateThumbnailForImage(Meme meme)
@@ -125,33 +157,34 @@ public class ImportService : IImportService
         thumbnailsDir = Path.Join(thumbnailsDir, "MemeManagerThumbnails");
         // Ensure the directory and all its parents exist.
         Directory.CreateDirectory(thumbnailsDir);
-        var thumbnailPath = Path.Join(thumbnailsDir, meme.Id+"-"+memeFile.Name);
-        
+        var thumbnailPath = Path.Join(thumbnailsDir, meme.Id + "-" + memeFile.Name);
+
         using var image = await Image.LoadAsync(meme.Path);
         var size = image.Size();
         if (size.Height > size.Width)
         {
-            image.Mutate(x => x.Resize(0,200));
+            image.Mutate(x => x.Resize(0, 200));
         }
         else
         {
-            image.Mutate(x => x.Resize(200,0));
+            image.Mutate(x => x.Resize(200, 0));
         }
-        
+
         await image.SaveAsync(thumbnailPath);
-        
+
         return thumbnailPath;
     }
 
-    private async Task<string?> GenerateThumbnailForGif(Meme meme){
+    private async Task<string?> GenerateThumbnailForGif(Meme meme)
+    {
         var memeFile = new FileInfo(meme.Path);
         var thumbnailsDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData,
             System.Environment.SpecialFolderOption.DoNotVerify);
         thumbnailsDir = Path.Join(thumbnailsDir, "MemeManagerThumbnails");
         // Ensure the directory and all its parents exist.
         Directory.CreateDirectory(thumbnailsDir);
-        var thumbnailPath = Path.Join(thumbnailsDir, meme.Id+"-"+memeFile.Name+".png");
-        
+        var thumbnailPath = Path.Join(thumbnailsDir, meme.Id + "-" + memeFile.Name + ".png");
+
         using var image = await Image.LoadAsync(meme.Path);
 
         if (image.Frames.Count < 1)
@@ -170,15 +203,15 @@ public class ImportService : IImportService
         var size = firstFrame.Size();
         if (size.Height > size.Width)
         {
-            firstFrame.Mutate(x => x.Resize(0,200));
+            firstFrame.Mutate(x => x.Resize(0, 200));
         }
         else
         {
-            firstFrame.Mutate(x => x.Resize(200,0));
+            firstFrame.Mutate(x => x.Resize(200, 0));
         }
         await firstFrame.SaveAsync(thumbnailPath);
-        
-        
+
+
 
         // foreach (ImageFrame frame in image.Frames)
         // {
@@ -190,22 +223,22 @@ public class ImportService : IImportService
         //
         // image.Mutate(x => x.Resize(0,200));
         // await image.SaveAsync(thumbnailPath);
-        
+
         return thumbnailPath;
-        
+
     }
 
     private async Task<string?> GenerateThumbnailForVideo(Meme meme)
     {
         await FFmpegDownloader.GetLatestVersion(FFmpegVersion.Official);
-        
+
         var memeFile = new FileInfo(meme.Path);
         var thumbnailsDir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData,
             System.Environment.SpecialFolderOption.DoNotVerify);
         thumbnailsDir = Path.Join(thumbnailsDir, "MemeManagerThumbnails");
         // Ensure the directory and all its parents exist.
         Directory.CreateDirectory(thumbnailsDir);
-        var thumbnailPath = Path.Join(thumbnailsDir, meme.Id+"-"+memeFile.Name+".png");
+        var thumbnailPath = Path.Join(thumbnailsDir, meme.Id + "-" + memeFile.Name + ".png");
 
         var thumbnailFile = new FileInfo(thumbnailPath);
         // Check if the thumbnail already exists for whatever reason. This can sometimes happen if the DB is deleted and then recreated via an import.
@@ -214,23 +247,23 @@ public class ImportService : IImportService
         {
             thumbnailFile.Delete();
         }
-        
+
         await Task.Run(async () =>
         {
             // TODO: Check what Windows does. It definitely doesn't take the first frame. It might take a frame at some percentage of the way through the video
             var conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(meme.Path, thumbnailPath, TimeSpan.FromSeconds(0));
             await conversion.Start();
         });
-        
+
         using var image = await Image.LoadAsync(thumbnailPath);
         var size = image.Size();
         if (size.Height > size.Width)
         {
-            image.Mutate(x => x.Resize(0,200));
+            image.Mutate(x => x.Resize(0, 200));
         }
         else
         {
-            image.Mutate(x => x.Resize(200,0));
+            image.Mutate(x => x.Resize(200, 0));
         }
         await image.SaveAsync(thumbnailPath);
 

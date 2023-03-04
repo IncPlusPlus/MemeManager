@@ -18,9 +18,10 @@ public class FileAccessBootstrapper
         var logger = resolver.GetRequiredService<ILogger>();
         // Grab an instance of the change notifier. This is an awful hacky way around doing reactive data properly. I'll figure it out at some point...
         var dbChangeNotifier = resolver.GetRequiredService<IDbChangeNotifier>();
+        var importRequestNotifier = resolver.GetRequiredService<IImportRequestNotifier>();
         var memeService = resolver.GetRequiredService<IMemeService>();
         var categoryService = resolver.GetRequiredService<ICategoryService>();
         var tagService = resolver.GetRequiredService<ITagService>();
-        services.RegisterLazySingleton<IImportService>(() => new ImportService(logger, dbChangeNotifier, memeService, categoryService, tagService));
+        services.RegisterLazySingleton<IImportService>(() => new ImportService(logger, dbChangeNotifier, importRequestNotifier, memeService, categoryService, tagService));
     }
 }
