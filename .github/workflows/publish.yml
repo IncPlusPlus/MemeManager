@@ -1,4 +1,4 @@
-﻿name: Publish
+name: Publish
 on:
   release:
     types:
@@ -31,7 +31,7 @@ jobs:
         run: echo ${{ steps.gitversion.outputs.nuGetVersion  }} > version.txt
 
       - name: Upload version.txt
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: gitversion
           path: version.txt
@@ -84,13 +84,13 @@ jobs:
       - run:  dotnet publish -c Release -r ${{ matrix.runtime }}
 
       - name: Upload Windows artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: windows-exe
           path: MemeManager/bin/Release/net6.0/win-x64/publish/MemeManager.exe
 
       - name: Upload Linux artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: linux-exe
           path: MemeManager/bin/Release/net6.0/linux-x64/publish/MemeManager
