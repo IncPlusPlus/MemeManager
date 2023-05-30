@@ -36,6 +36,7 @@ public class DataAccessBootstrapper
     {
         services.RegisterLazySingleton<IDbChangeNotifier>(() => new DbChangeNotifier());
         services.RegisterLazySingleton<IImportRequestNotifier>(() => new ImportRequestNotifier());
+        services.RegisterLazySingleton<IStatusService>(() => new StatusService(resolver.GetRequiredService<ILogger>()));
     }
 
     private static void RegisterServices(IMutableDependencyResolver services, IReadonlyDependencyResolver resolver)

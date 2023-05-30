@@ -20,8 +20,10 @@ public class FileAccessBootstrapper
         var dbChangeNotifier = resolver.GetRequiredService<IDbChangeNotifier>();
         var importRequestNotifier = resolver.GetRequiredService<IImportRequestNotifier>();
         var memeService = resolver.GetRequiredService<IMemeService>();
+        var statusService = resolver.GetRequiredService<IStatusService>();
         var categoryService = resolver.GetRequiredService<ICategoryService>();
         var tagService = resolver.GetRequiredService<ITagService>();
-        services.RegisterLazySingleton<IImportService>(() => new ImportService(logger, dbChangeNotifier, importRequestNotifier, memeService, categoryService, tagService));
+        services.RegisterLazySingleton<IImportService>(() => new ImportService(logger, dbChangeNotifier,
+            importRequestNotifier, statusService, memeService, categoryService, tagService));
     }
 }

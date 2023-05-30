@@ -51,6 +51,7 @@
 
     <DockPanel>
       <main:SearchbarView DataContext="{Binding SearchbarViewModel}" DockPanel.Dock="Top" />
+      <main:StatusBarView Height="40" DataContext="{Binding StatusBarViewModel}" DockPanel.Dock="Bottom" />
       <Grid>
         <!-- <Grid.RowDefinitions> -->
         <!--     <RowDefinition Height="Auto" /> -->

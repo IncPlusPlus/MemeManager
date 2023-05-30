@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using MemeManager.Extensions;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -36,15 +37,17 @@ public class ImportService : IImportService
     private readonly IImportRequestNotifier _importRequestNotifier;
     private readonly ILogger _log;
     private readonly IMemeService _memeService;
+    private readonly IStatusService _statusService;
     private readonly ITagService _tagService;
 
     public ImportService(ILogger logger, IDbChangeNotifier dbChangeNotifier,
-        IImportRequestNotifier importRequestNotifier, IMemeService memeService,
+        IImportRequestNotifier importRequestNotifier, IStatusService statusService, IMemeService memeService,
         ICategoryService categoryService, ITagService tagService)
     {
         _log = logger;
         _dbChangeNotifier = dbChangeNotifier;
         _importRequestNotifier = importRequestNotifier;
+        _statusService = statusService;
         _memeService = memeService;
         _categoryService = categoryService;
         _tagService = tagService;
@@ -68,7 +71,7 @@ public class ImportService : IImportService
             var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
             _log.LogTrace("Sending {NumFiles} files for processing", files.Length);
             _importRequestNotifier.SendImportRequest(path, files);
-            _log.LogTrace("Successfully sent the discovered files for processing", files.Length);
+            _log.LogTrace("Successfully sent the discovered {NumFiles} files for processing", files.Length);
         }
         catch (Exception e)
         {
@@ -79,10 +82,11 @@ public class ImportService : IImportService
     public void ImportFromPaths(string basePath, string[] files)
     {
         _log.LogInformation("Starting import of {NumMemes} from path {MemesPath}", files.Length, basePath);
+        var importJobNum = _statusService.AddJob("Importing memes", 0, files.Length);
         try
         {
             var memesToImport = new List<Meme>(files.Length);
-            foreach (var file in files)
+            foreach (var (file, index) in files.WithIndex())
             {
                 // Skip memes we already know about
                 if (_memeService.GetByPath(file) != null)
@@ -100,6 +104,7 @@ public class ImportService : IImportService
                     TimeAdded = DateTime.Now,
                     AdditionalTerms = ""
                 });
+                _statusService.UpdateJob(importJobNum, index, files.Length);
             }
             _log.LogTrace("Created all necessary categories. Attempting to save new memes to the database...");
             _memeService.BulkCreate(memesToImport);
@@ -112,16 +117,26 @@ public class ImportService : IImportService
         {
             _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", basePath);
         }
+        finally
+        {
+            _statusService.RemoveJob(importJobNum);
+        }
     }
 
     public async Task GenerateThumbnails(IEnumerable<Meme> memes)
     {
         _log.LogInformation("Starting thumbnail generation");
+        if (!memes.TryGetNonEnumeratedCount(out var count))
+        {
+            _log.LogError("Tried to count the number of memes to generate thumbnails for but failed");
+        }
+
+        var thumbnailJobId = _statusService.AddJob("Generating thumbnails", 0, count);
         var startTime = Stopwatch.GetTimestamp();
         var memesAndThumbnailPaths = new List<(Meme, string?)>();
         // TODO: See if this can be parallelized into a threadpool or something so it doesn't take forever to load
         // thumbnails one-by-one in a big library.
-        foreach (var meme in memes)
+        foreach (var (meme, index) in memes.WithIndex())
         {
             try
             {
@@ -138,9 +153,12 @@ public class ImportService : IImportService
             {
                 _log.LogError(e, "Failed to generate thumbnail for meme at path '{MemePath}'", meme.Path);
             }
+            finally { _statusService.UpdateJob(thumbnailJobId, index, count); }
         }
+
         var elapsedTime = Stopwatch.GetElapsedTime(startTime);
         _log.LogInformation("Finished generating thumbnails in {Time}", elapsedTime);
+        _statusService.RemoveJob(thumbnailJobId);
         _importRequestNotifier.SendSetThumbnailsRequest(memesAndThumbnailPaths);
     }
 
@@ -209,8 +227,8 @@ public class ImportService : IImportService
         {
             firstFrame.Mutate(x => x.Resize(200, 0));
         }
-        await firstFrame.SaveAsync(thumbnailPath);
 
+        await firstFrame.SaveAsync(thumbnailPath);
 
 
         // foreach (ImageFrame frame in image.Frames)
@@ -225,7 +243,6 @@ public class ImportService : IImportService
         // await image.SaveAsync(thumbnailPath);
 
         return thumbnailPath;
-
     }
 
     private async Task<string?> GenerateThumbnailForVideo(Meme meme)
@@ -251,7 +268,8 @@ public class ImportService : IImportService
         await Task.Run(async () =>
         {
             // TODO: Check what Windows does. It definitely doesn't take the first frame. It might take a frame at some percentage of the way through the video
-            var conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(meme.Path, thumbnailPath, TimeSpan.FromSeconds(0));
+            var conversion =
+                await FFmpeg.Conversions.FromSnippet.Snapshot(meme.Path, thumbnailPath, TimeSpan.FromSeconds(0));
             await conversion.Start();
         });
 
@@ -265,6 +283,7 @@ public class ImportService : IImportService
         {
             image.Mutate(x => x.Resize(200, 0));
         }
+
         await image.SaveAsync(thumbnailPath);
 
         return thumbnailPath;

@@ -22,11 +22,13 @@ namespace MemeManager.ViewModels.Implementations
         private readonly IObservable<EventPattern<SetThumbnailsRequestEventArgs>> _setThumbnailsRequestObservable;
 
         public MainWindowViewModel(IDialogService dialogService, ISearchbarViewModel searchbarViewModel,
-            ICategoriesListViewModel categoriesListViewModel,
-            IMemesListViewModel memesListViewModel, LayoutConfiguration layoutConfig, IImportService importService, IImportRequestNotifier importRequestNotifier)
+            IStatusBarViewModel statusBarViewModel, ICategoriesListViewModel categoriesListViewModel,
+            IMemesListViewModel memesListViewModel, LayoutConfiguration layoutConfig, IImportService importService,
+            IImportRequestNotifier importRequestNotifier)
         {
             _dialogService = dialogService;
             SearchbarViewModel = searchbarViewModel;
+            StatusBarViewModel = statusBarViewModel;
             CategoriesListViewModel = categoriesListViewModel;
             MemesListViewModel = memesListViewModel;
             _layoutConfig = layoutConfig;
@@ -34,14 +36,17 @@ namespace MemeManager.ViewModels.Implementations
             ImportCommand = ReactiveCommand.CreateFromTask(OpenImportDialog);
 
             #region Terrible, awful hack to allow for a background Task to do all EF operations on the UI thread to avoid DbContext threading issues
+
             _importRequestObservable =
                 Observable.FromEventPattern<EventHandler<ImportRequestEventArgs>, ImportRequestEventArgs>(
                     handler => importRequestNotifier.ImportRequest += handler,
                     handler => importRequestNotifier.ImportRequest -= handler);
             _generateThumbnailsRequestObservable =
-                Observable.FromEventPattern<EventHandler<GenerateThumbnailsRequestEventArgs>, GenerateThumbnailsRequestEventArgs>(
-                    handler => importRequestNotifier.GenerateThumbnailsRequest += handler,
-                    handler => importRequestNotifier.GenerateThumbnailsRequest -= handler);
+                Observable
+                    .FromEventPattern<EventHandler<GenerateThumbnailsRequestEventArgs>,
+                        GenerateThumbnailsRequestEventArgs>(
+                        handler => importRequestNotifier.GenerateThumbnailsRequest += handler,
+                        handler => importRequestNotifier.GenerateThumbnailsRequest -= handler);
             _setThumbnailsRequestObservable =
                 Observable.FromEventPattern<EventHandler<SetThumbnailsRequestEventArgs>, SetThumbnailsRequestEventArgs>(
                     handler => importRequestNotifier.SetThumbnailsRequest += handler,
@@ -73,13 +78,15 @@ namespace MemeManager.ViewModels.Implementations
         }
 
         public ISearchbarViewModel SearchbarViewModel { get; }
+        public IStatusBarViewModel StatusBarViewModel { get; }
         public ICategoriesListViewModel CategoriesListViewModel { get; }
         public IMemesListViewModel MemesListViewModel { get; }
 
         private async Task OpenImportDialog()
         {
             var dialogViewModel = _dialogService.CreateViewModel<IImportFolderDialogViewModel>();
-            var success = await _dialogService.ShowDialogAsync<ImportFolderDialog>(this, dialogViewModel).ConfigureAwait(true);
+            var success = await _dialogService.ShowDialogAsync<ImportFolderDialog>(this, dialogViewModel)
+                .ConfigureAwait(true);
             if (success == true && dialogViewModel.Path != null)
             {
                 _importService.ImportFromDirectory(dialogViewModel.Path);
