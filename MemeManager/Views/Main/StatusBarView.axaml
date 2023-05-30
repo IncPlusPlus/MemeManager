@@ -1,0 +1,16 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="300"
+             x:Class="MemeManager.Views.Main.StatusBarView"
+             xmlns:viewModels="clr-namespace:MemeManager.ViewModels.Implementations">
+  <Design.DataContext>
+    <viewModels:StatusBarViewModel/>
+  </Design.DataContext>
+    
+  <StackPanel Orientation="Horizontal">
+    <TextBlock VerticalAlignment="Center" Text="{Binding StatusText}" />
+    <ProgressBar VerticalAlignment="Center" IsVisible="{Binding HasProgress}" Minimum="0" Maximum="{Binding MaximumProgress}" Value="{Binding CurrentProgress}"/>
+  </StackPanel>
+</UserControl>
