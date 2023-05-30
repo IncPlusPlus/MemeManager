@@ -94,7 +94,6 @@ public class ImportService : IImportService
                 var fileInfo = new FileInfo(file);
                 var memeType = ClassifyFile(fileInfo);
                 var memeCategory = CreateCategoryIfNotExists(basePath, file);
-                // TODO: Maybe add a method to MemeService that allows for adding a list of Meme entities to the DB to avoid frequent DB writes and UI updates (because of the notifier being fired for every new meme)
                 memesToImport.Add(new Meme()
                 {
                     Path = file,
