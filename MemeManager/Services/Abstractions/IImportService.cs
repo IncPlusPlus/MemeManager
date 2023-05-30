@@ -17,8 +17,7 @@ public interface IImportService
     /// to perform all Entity Framework database operations on the UI thread to keep EF happy.
     /// </summary>
     /// <param name="basePath">the folder that was selected during the import screen</param>
-    /// <param name="files">an array of full paths to individual memes to be imported</param>
-    void ImportFromPaths(string basePath, string[] files);
+    void ImportFromPaths(string basePath);
 
     Task GenerateThumbnails(IEnumerable<Meme> importedMemes);
     void SetThumbnails(IEnumerable<(Meme, string?)> memesAndThumbnailPaths);

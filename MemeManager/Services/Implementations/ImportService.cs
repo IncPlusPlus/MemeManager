@@ -65,23 +65,27 @@ public class ImportService : IImportService
      */
     public void ImportFromDirectory(string path)
     {
-        _log.LogInformation("Scanning path: {MemesPath}", path);
+        _log.LogInformation("Import requested for path: {MemesPath}", path);
         try
         {
-            var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-            _log.LogTrace("Sending {NumFiles} files for processing", files.Length);
-            _importRequestNotifier.SendImportRequest(path, files);
-            _log.LogTrace("Successfully sent the discovered {NumFiles} files for processing", files.Length);
+            _importRequestNotifier.SendImportRequest(path);
         }
         catch (Exception e)
         {
-            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", path);
+            _log.LogError(e, "Failed to send import request for memes on path {MemesPath}", path);
         }
     }
 
-    public void ImportFromPaths(string basePath, string[] files)
+    // TODO: Break this up so that the creation of categories is:
+    // 1. Cached such that instead of checking the database, a cache can be checked to see if a category for a certain path exists
+    // 2. Uses it's own category creation method that
+    //      1. Doesn't notify the UI of a new category being created
+    //      2. Uses its own DBContext instance so as to not run into any DBContext multi-thread access issues if the stupid idiot dumdum retard user decides to perform any action that requires DB access
+    public void ImportFromPaths(string basePath)
     {
-        _log.LogInformation("Starting import of {NumMemes} from path {MemesPath}", files.Length, basePath);
+        _log.LogInformation("Scanning path: {MemesPath}", basePath);
+        var files = Directory.GetFiles(basePath, "*", SearchOption.AllDirectories);
+        _log.LogInformation("Starting import of {NumMemes} files from path {MemesPath}", files.Length, basePath);
         var importJobNum = _statusService.AddJob("Importing memes", 0, files.Length);
         try
         {
