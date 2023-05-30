@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
-using MemeManager.Persistence;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
@@ -18,8 +14,6 @@ using Xabe.FFmpeg.Downloader;
 
 namespace MemeManager.Services.Implementations;
 
-// TODO: This class's performance could be further improved by performing all the read operations all at once instead
-// reading and then writing the thumbnail for each meme.
 public class ImportService : IImportService
 {
     // TODO: If I ever get around to adding tests, I should add a test that makes sure that the union of these file extensions arrays is an empty array
@@ -39,33 +33,21 @@ public class ImportService : IImportService
     private static readonly string[] s_audioExtensions = new[] { "wav", "flac", "ogg", "mp3", "alac", "aac" };
     private readonly ICategoryService _categoryService;
     private readonly IDbChangeNotifier _dbChangeNotifier;
+    private readonly IImportRequestNotifier _importRequestNotifier;
     private readonly ILogger _log;
     private readonly IMemeService _memeService;
     private readonly ITagService _tagService;
-    private int _current;
 
-    private int _total;
-
-
-    public ImportService(ILogger logger, IDbChangeNotifier dbChangeNotifier, IMemeService memeService,
+    public ImportService(ILogger logger, IDbChangeNotifier dbChangeNotifier,
+        IImportRequestNotifier importRequestNotifier, IMemeService memeService,
         ICategoryService categoryService, ITagService tagService)
     {
-        var separateContext = new MemeManagerContext();
         _log = logger;
         _dbChangeNotifier = dbChangeNotifier;
-        _memeService = memeService.NewInstance(separateContext);
-        _categoryService = categoryService.NewInstance(separateContext);
-        _tagService = tagService.NewInstance(separateContext);
-    }
-
-    public double Progress
-    {
-        get
-        {
-            if (_total == 0)
-                return 0;
-            return (double)_current / _total;
-        }
+        _importRequestNotifier = importRequestNotifier;
+        _memeService = memeService;
+        _categoryService = categoryService;
+        _tagService = tagService;
     }
 
     // TODO: Expand this with options
@@ -78,14 +60,28 @@ public class ImportService : IImportService
      * - Skip generating thumbnails
      * - Files to skip (a regexp for a file name or names)
      */
-    public IEnumerable<Meme> ImportFromDirectory(string path)
+    public void ImportFromDirectory(string path)
     {
-        var importedMemes = new List<Meme>();
+        _log.LogInformation("Scanning path: {MemesPath}", path);
         try
         {
-            _log.LogInformation("IMPORT OF MEMES FROM PATH {MemesPath} STARTING!", path);
             var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-            importedMemes = new List<Meme>(files.Length);
+            _log.LogTrace("Sending {NumFiles} files for processing", files.Length);
+            _importRequestNotifier.SendImportRequest(path, files);
+            _log.LogTrace("Successfully sent the discovered files for processing", files.Length);
+        }
+        catch (Exception e)
+        {
+            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", path);
+        }
+    }
+
+    public void ImportFromPaths(string basePath, string[] files)
+    {
+        _log.LogInformation("Starting import of {NumMemes} from path {MemesPath}", files.Length, basePath);
+        try
+        {
+            var memesToImport = new List<Meme>(files.Length);
             foreach (var file in files)
             {
                 // Skip memes we already know about
@@ -93,9 +89,9 @@ public class ImportService : IImportService
                     continue;
                 var fileInfo = new FileInfo(file);
                 var memeType = ClassifyFile(fileInfo);
-                var memeCategory = CreateCategoryIfNotExists(path, file);
+                var memeCategory = CreateCategoryIfNotExists(basePath, file);
                 // TODO: Maybe add a method to MemeService that allows for adding a list of Meme entities to the DB to avoid frequent DB writes and UI updates (because of the notifier being fired for every new meme)
-                importedMemes.Add(_memeService.Create(new Meme()
+                memesToImport.Add(new Meme()
                 {
                     Path = file,
                     Name = fileInfo.Name,
@@ -103,55 +99,29 @@ public class ImportService : IImportService
                     Category = memeCategory,
                     TimeAdded = DateTime.Now,
                     AdditionalTerms = ""
-                }));
+                });
             }
-            _log.LogInformation("IMPORT OF MEMES FROM PATH {MemesPath} SUCCEEDED!", path);
-            return importedMemes;
+            _log.LogTrace("Created all necessary categories. Attempting to save new memes to the database...");
+            _memeService.BulkCreate(memesToImport);
+            _log.LogInformation("Import of memes from path {MemesPath} succeeded!", basePath);
+            _log.LogTrace("Sending GenerateThumbnailsRequest");
+            _importRequestNotifier.SendGenerateThumbnailsRequest(memesToImport);
+            _log.LogTrace("GenerateThumbnailsRequest sent");
         }
         catch (Exception e)
         {
-            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", path);
-            return importedMemes;
+            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", basePath);
         }
     }
 
     public async Task GenerateThumbnails(IEnumerable<Meme> memes)
     {
-        _log.LogInformation("THUMBNAIL GENERATION OF MEMES STARTING!");
-        Stopwatch watch = new Stopwatch();
-        watch.Start();
-        // Maybe some day I'll use System.IProgress for this.
-
+        _log.LogInformation("Starting thumbnail generation");
+        var startTime = Stopwatch.GetTimestamp();
+        var memesAndThumbnailPaths = new List<(Meme, string?)>();
         // TODO: See if this can be parallelized into a threadpool or something so it doesn't take forever to load
         // thumbnails one-by-one in a big library.
-        // Try 1: Not parallel. Kinda slow
-        // foreach (var meme in memes)
-        // {
-        //     try
-        //     {
-        //         var thumbnailPath = meme.MediaType switch
-        //         {
-        //             Meme.FileMediaType.Image => await GenerateThumbnailForImage(meme),
-        //             Meme.FileMediaType.Video => await GenerateThumbnailForVideo(meme),
-        //             Meme.FileMediaType.Gif => await GenerateThumbnailForGif(meme),
-        //             _ => null
-        //         };
-        //         _memeService.SetThumbnailPath(meme, thumbnailPath);
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         _log.LogError(e, "Failed to generate thumbnail for meme at path '{MemePath}'", meme.Path);
-        //     }
-        // }
-
-        // Try 2: Parallel but lots of DB requests.
-        var options = new ParallelOptions { MaxDegreeOfParallelism = 2 };
-        var gotCount = memes.TryGetNonEnumeratedCount(out this._total);
-        this._current = 0;
-        var thumbnails = new ConcurrentBag<(Meme, string?)>();
-
-        // CancellationToken is ignored for now but I might use this if I make this Task cancelable
-        await Parallel.ForEachAsync(memes, options, async (meme, token) =>
+        foreach (var meme in memes)
         {
             try
             {
@@ -162,22 +132,21 @@ public class ImportService : IImportService
                     Meme.FileMediaType.Gif => await GenerateThumbnailForGif(meme),
                     _ => null
                 };
-                thumbnails.Add((meme, thumbnailPath));
+                memesAndThumbnailPaths.Add((meme, thumbnailPath));
             }
             catch (Exception e)
             {
                 _log.LogError(e, "Failed to generate thumbnail for meme at path '{MemePath}'", meme.Path);
             }
-            finally
-            {
-                Interlocked.Increment(ref this._current);
-            }
-        });
-        watch.Stop();
-        // _log.LogInformation("THUMBNAIL GENERATION OF MEMES FINISHED! Saving...");
-        _log.LogInformation("Finished. Elapsed={TimeElapsed}", watch.Elapsed);
-        _memeService.SetThumbnailPaths(thumbnails);
-        // _log.LogInformation("Thumbnails saved!");
+        }
+        var elapsedTime = Stopwatch.GetElapsedTime(startTime);
+        _log.LogInformation("Finished generating thumbnails in {Time}", elapsedTime);
+        _importRequestNotifier.SendSetThumbnailsRequest(memesAndThumbnailPaths);
+    }
+
+    public void SetThumbnails(IEnumerable<(Meme, string?)> memesAndThumbnailPaths)
+    {
+        _memeService.SetThumbnailPaths(memesAndThumbnailPaths);
     }
 
     private async Task<string?> GenerateThumbnailForImage(Meme meme)
@@ -224,7 +193,13 @@ public class ImportService : IImportService
         }
 
         var frames = image.Frames;
+        // var firstFrame = image.Frames[0];
         var firstFrame = frames.CloneFrame(0);
+        // GifFrameMetadata metaData = firstFrame.Metadata.GetGifMetadata();
+        // var frameDelay = metaData.FrameDelay;
+        // firstFrame = image.Frames[metaData.FrameDelay];
+        // var result = new Image<Rgba32>(size.Width, size.Height);
+        // result[0, 0] = firstFrame.;
         var size = firstFrame.Size();
         if (size.Height > size.Width)
         {
@@ -235,7 +210,22 @@ public class ImportService : IImportService
             firstFrame.Mutate(x => x.Resize(200, 0));
         }
         await firstFrame.SaveAsync(thumbnailPath);
+
+
+
+        // foreach (ImageFrame frame in image.Frames)
+        // {
+        //     GifFrameMetadata metaData = frame.Metadata.GetGifMetadata();
+        //     // metaData.FrameDelay = frameDelay;
+        //     // metaData.ColorTableLength = colorTableLength;
+        //     // metaData.DisposalMethod = disposalMethod;
+        // }
+        //
+        // image.Mutate(x => x.Resize(0,200));
+        // await image.SaveAsync(thumbnailPath);
+
         return thumbnailPath;
+
     }
 
     private async Task<string?> GenerateThumbnailForVideo(Meme meme)
@@ -346,13 +336,6 @@ public class ImportService : IImportService
                     currentParent = existingCategory;
                 }
             }
-        }
-
-        if (currentParent != null)
-        {
-            using var context = new MemeManagerContext();
-            // I can't get CategoryService.GetTopLevelCategories() to not fucking return tracked CategoryProxy objects
-            context.Categories.Entry(currentParent).State = EntityState.Detached;
         }
 
         return currentParent;

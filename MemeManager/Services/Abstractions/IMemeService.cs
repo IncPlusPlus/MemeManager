@@ -1,14 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using MemeManager.Persistence;
 using MemeManager.Persistence.Entity;
 
 namespace MemeManager.Services.Abstractions;
 
 public interface IMemeService
 {
-    IMemeService NewInstance(MemeManagerContext separateContext);
     IEnumerable<Meme> GetAll();
 
     IEnumerable<Meme> GetFiltered(Category? category, string? searchTerms);
@@ -19,6 +17,8 @@ public interface IMemeService
     Meme? GetByPath(string path);
 
     Meme Create(Meme newMeme);
+
+    void BulkCreate(IEnumerable<Meme> memes);
 
     Meme? DeleteById(int id);
 

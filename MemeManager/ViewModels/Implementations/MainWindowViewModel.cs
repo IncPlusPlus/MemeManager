@@ -1,4 +1,6 @@
-﻿using System.Reactive.Concurrency;
+﻿using System;
+using System.Reactive;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Avalonia.Controls;
@@ -13,12 +15,15 @@ namespace MemeManager.ViewModels.Implementations
     public class MainWindowViewModel : ViewModelBase, IMainWindowViewModel
     {
         private readonly IDialogService _dialogService;
+        private readonly IObservable<EventPattern<GenerateThumbnailsRequestEventArgs>> _generateThumbnailsRequestObservable;
+        private readonly IObservable<EventPattern<ImportRequestEventArgs>> _importRequestObservable;
         private readonly IImportService _importService;
         private readonly LayoutConfiguration _layoutConfig;
+        private readonly IObservable<EventPattern<SetThumbnailsRequestEventArgs>> _setThumbnailsRequestObservable;
 
         public MainWindowViewModel(IDialogService dialogService, ISearchbarViewModel searchbarViewModel,
             ICategoriesListViewModel categoriesListViewModel,
-            IMemesListViewModel memesListViewModel, LayoutConfiguration layoutConfig, IImportService importService)
+            IMemesListViewModel memesListViewModel, LayoutConfiguration layoutConfig, IImportService importService, IImportRequestNotifier importRequestNotifier)
         {
             _dialogService = dialogService;
             SearchbarViewModel = searchbarViewModel;
@@ -27,6 +32,36 @@ namespace MemeManager.ViewModels.Implementations
             _layoutConfig = layoutConfig;
             _importService = importService;
             ImportCommand = ReactiveCommand.CreateFromTask(OpenImportDialog);
+
+            #region Terrible, awful hack to allow for a background Task to do all EF operations on the UI thread to avoid DbContext threading issues
+            _importRequestObservable =
+                Observable.FromEventPattern<EventHandler<ImportRequestEventArgs>, ImportRequestEventArgs>(
+                    handler => importRequestNotifier.ImportRequest += handler,
+                    handler => importRequestNotifier.ImportRequest -= handler);
+            _generateThumbnailsRequestObservable =
+                Observable.FromEventPattern<EventHandler<GenerateThumbnailsRequestEventArgs>, GenerateThumbnailsRequestEventArgs>(
+                    handler => importRequestNotifier.GenerateThumbnailsRequest += handler,
+                    handler => importRequestNotifier.GenerateThumbnailsRequest -= handler);
+            _setThumbnailsRequestObservable =
+                Observable.FromEventPattern<EventHandler<SetThumbnailsRequestEventArgs>, SetThumbnailsRequestEventArgs>(
+                    handler => importRequestNotifier.SetThumbnailsRequest += handler,
+                    handler => importRequestNotifier.SetThumbnailsRequest -= handler);
+
+            this.WhenAnyObservable(x => x._importRequestObservable)
+                .Select(x => x.EventArgs)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(x => importService.ImportFromPaths(x.BasePath, x.MemePaths));
+
+            this.WhenAnyObservable(x => x._generateThumbnailsRequestObservable)
+                .Select(x => x.EventArgs)
+                .ObserveOn(RxApp.TaskpoolScheduler)
+                .Subscribe(x => importService.GenerateThumbnails(x.Memes));
+
+            this.WhenAnyObservable(x => x._setThumbnailsRequestObservable)
+                .Select(x => x.EventArgs)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(x => importService.SetThumbnails(x.MemesAndThumbnailPaths));
+            #endregion
         }
 
         public ICommand ImportCommand { get; }
@@ -47,11 +82,7 @@ namespace MemeManager.ViewModels.Implementations
             var success = await _dialogService.ShowDialogAsync<ImportFolderDialog>(this, dialogViewModel).ConfigureAwait(true);
             if (success == true && dialogViewModel.Path != null)
             {
-                var importedMemes = _importService.ImportFromDirectory(dialogViewModel.Path);
-                RxApp.TaskpoolScheduler.Schedule(() =>
-                {
-                    _importService.GenerateThumbnails(importedMemes);
-                });
+                _importService.ImportFromDirectory(dialogViewModel.Path);
             }
         }
     }
