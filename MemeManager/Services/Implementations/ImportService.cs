@@ -94,7 +94,10 @@ public class ImportService : IImportService
             {
                 // Skip memes we already know about
                 if (_memeService.GetByPath(file) != null)
+                {
+                    _statusService.UpdateJob(importJobNum, index, files.Length);
                     continue;
+                }
                 var fileInfo = new FileInfo(file);
                 var memeType = ClassifyFile(fileInfo);
                 var memeCategory = CreateCategoryIfNotExists(basePath, file);
