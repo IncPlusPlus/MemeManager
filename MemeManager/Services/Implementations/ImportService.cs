@@ -86,6 +86,7 @@ public class ImportService : IImportService
         _log.LogInformation("Scanning path: {MemesPath}", basePath);
         var files = Directory.GetFiles(basePath, "*", SearchOption.AllDirectories);
         _log.LogInformation("Starting import of {NumMemes} files from path {MemesPath}", files.Length, basePath);
+        var startTimeIteration = Stopwatch.GetTimestamp();
         var importJobNum = _statusService.AddJob("Importing memes", 0, files.Length);
         try
         {
@@ -112,8 +113,13 @@ public class ImportService : IImportService
                 });
                 _statusService.UpdateJob(importJobNum, index, files.Length);
             }
+            var elapsedTimeIteration = Stopwatch.GetElapsedTime(startTimeIteration);
+            _log.LogInformation("Finished iterating and creating categories in {Time}", elapsedTimeIteration);
             _log.LogTrace("Created all necessary categories. Attempting to save new memes to the database...");
+            var startTimeSave = Stopwatch.GetTimestamp();
             _memeService.BulkCreate(memesToImport);
+            var elapsedTimeSave = Stopwatch.GetElapsedTime(startTimeSave);
+            _log.LogInformation("Saved {NumMemes} to the DB in {Time}",files.Length, elapsedTimeSave);
             _log.LogInformation("Import of memes from path {MemesPath} succeeded!", basePath);
             _log.LogTrace("Sending GenerateThumbnailsRequest");
             _importRequestNotifier.SendGenerateThumbnailsRequest(memesToImport);
