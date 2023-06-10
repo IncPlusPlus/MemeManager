@@ -54,7 +54,7 @@ namespace MemeManager.ViewModels.Implementations
 
             this.WhenAnyObservable(x => x._importRequestObservable)
                 .Select(x => x.EventArgs)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(RxApp.TaskpoolScheduler)
                 .Subscribe(x => importService.ImportFromPaths(x.BasePath));
 
             this.WhenAnyObservable(x => x._generateThumbnailsRequestObservable)
