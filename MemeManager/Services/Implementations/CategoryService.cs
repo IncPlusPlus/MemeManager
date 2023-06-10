@@ -52,7 +52,7 @@ public class CategoryService : ICategoryService
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
         return newCategory;
     }
-    
+
     public void BulkCreate(IEnumerable<Category> categories)
     {
         _context.Categories.AddRange(categories);

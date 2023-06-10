@@ -20,14 +20,16 @@ public class ImportService : IImportService
 {
     // TODO: If I ever get around to adding tests, I should add a test that makes sure that the union of these file extensions arrays is an empty array
     // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
-    [SuppressMessage("ReSharper", "StringLiteralTypo")] private static readonly string[] s_imageExtensions = new[]
+    [SuppressMessage("ReSharper", "StringLiteralTypo")]
+    private static readonly string[] s_imageExtensions = new[]
     {
         "jpg", "jpeg", "jfif", "pjpeg", "pjp", "png", "webp", "tif", "tiff", "bmp", "heic", "heif", "avif"
     };
 
     [SuppressMessage("ReSharper", "StringLiteralTypo")] private static readonly string[] s_animatedImageExtensions = new[] { "gif", "apng" };
 
-    [SuppressMessage("ReSharper", "StringLiteralTypo")] private static readonly string[] s_videoExtensions = new[]
+    [SuppressMessage("ReSharper", "StringLiteralTypo")]
+    private static readonly string[] s_videoExtensions = new[]
     {
         "mp4", "avi", "mov", "wmv", "mkv", "webm", "flv", "f4v", "swf", "avchd", "ass", "ts", "3gp"
     };
@@ -87,7 +89,7 @@ public class ImportService : IImportService
         _log.LogInformation("Scanning path: {MemesPath}", basePath);
         var files = Directory.GetFiles(basePath, "*", SearchOption.AllDirectories);
         _log.LogInformation("Starting import of {NumMemes} files from path {MemesPath}", files.Length, basePath);
-        
+
         var cats = CreateCategoriesForPaths(basePath, files);
         var startTimeIteration = Stopwatch.GetTimestamp();
         var importJobNum = _statusService.AddJob("Importing memes", 0, files.Length);
@@ -124,7 +126,7 @@ public class ImportService : IImportService
             var startTimeSave = Stopwatch.GetTimestamp();
             _memeService.BulkCreate(memesToImport);
             var elapsedTimeSave = Stopwatch.GetElapsedTime(startTimeSave);
-            _log.LogInformation("Saved {NumMemes} to the DB in {Time}",files.Length, elapsedTimeSave);
+            _log.LogInformation("Saved {NumMemes} to the DB in {Time}", files.Length, elapsedTimeSave);
             _log.LogInformation("Import of memes from path {MemesPath} succeeded!", basePath);
             _log.LogTrace("Sending GenerateThumbnailsRequest");
             _importRequestNotifier.SendGenerateThumbnailsRequest(memesToImport);
@@ -372,12 +374,12 @@ public class ImportService : IImportService
             _statusService.UpdateJob(categoryJobNum, index, existingAndNewCategories.Count);
         }
 
-        
+
         var elapsedTimeCats = Stopwatch.GetElapsedTime(startTimeCats);
         _log.LogInformation("Finished creating all categories in {Time}", elapsedTimeCats);
         _categoryService.BulkCreate(categoriesToCreate);
         _statusService.RemoveJob(categoryJobNum);
-        
+
         return merged;
     }
 
@@ -388,27 +390,27 @@ public class ImportService : IImportService
         {
             // Not even the first part of the category path exists as a category. Create a category for each part of the path.
             var deepestCat = new Category() { Name = catPathParts[^1] };
-            cats[string.Join(Path.DirectorySeparatorChar,catPathParts)] = deepestCat;
+            cats[string.Join(Path.DirectorySeparatorChar, catPathParts)] = deepestCat;
             var currCat = deepestCat;
             for (var i = 1; i < catPathParts.Length; i++)
             {
-                currCat.Parent = new Category(){Name = catPathParts[^(1 + i)]};
+                currCat.Parent = new Category() { Name = catPathParts[^(1 + i)] };
                 cats[string.Join(Path.DirectorySeparatorChar, catPathParts.SkipLast(i))] = currCat.Parent;
                 currCat = currCat.Parent;
             }
 
             return deepestCat;
         }
-        if (cats.TryGetValue(string.Join(Path.DirectorySeparatorChar,catPathParts.SkipLast(depth)), out var existingCat) && existingCat != null)
+        if (cats.TryGetValue(string.Join(Path.DirectorySeparatorChar, catPathParts.SkipLast(depth)), out var existingCat) && existingCat != null)
         {
             // Found base
             var deepestCat = new Category() { Name = catPathParts[^1] };
-            cats[string.Join(Path.DirectorySeparatorChar,catPathParts)] = deepestCat;
+            cats[string.Join(Path.DirectorySeparatorChar, catPathParts)] = deepestCat;
             var currCat = deepestCat;
-    
+
             for (int i = 1; i < depth; i++)
             {
-                currCat.Parent = new Category(){Name = catPathParts[^(1 + i)]};
+                currCat.Parent = new Category() { Name = catPathParts[^(1 + i)] };
                 cats[string.Join(Path.DirectorySeparatorChar, catPathParts.SkipLast(i))] = currCat.Parent;
                 currCat = currCat.Parent;
             }
