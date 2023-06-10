@@ -139,6 +139,7 @@ public class ImportService : IImportService
         var current = 0;
         var memesAndThumbnailPaths = new ConcurrentBag<(Meme, string?)>();
 
+        // TODO: If I ever add cancellable tasks, this cancellation token will come in handy
         await Parallel.ForEachAsync(memes, options, async (meme, token) =>
         {
             try
