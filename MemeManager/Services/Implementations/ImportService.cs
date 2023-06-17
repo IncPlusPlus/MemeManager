@@ -62,6 +62,7 @@ public class ImportService : IImportService
      * - Additional file extensions to include and what media type they are (in case I'm missing any in the extensions lists)
      * - Skip generating thumbnails
      * - Files to skip (a regexp for a file name or names)
+     * - Make the imported date the file's creation date
      */
     public void ImportFromDirectory(string path)
     {
