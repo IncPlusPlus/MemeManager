@@ -22,9 +22,9 @@ public class CategoryService : ICategoryService
     }
 
 
-    public IEnumerable<Category> GetAll()
+    public IEnumerable<Category> GetAll(bool asNoTracking = true)
     {
-        return _context.Categories.AsNoTracking().ToList();
+        return asNoTracking ? _context.Categories.AsNoTracking().ToList() : _context.Categories.ToList();
     }
 
     public IEnumerable<Category> GetTopLevelCategories()
@@ -51,6 +51,13 @@ public class CategoryService : ICategoryService
         _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
         return newCategory;
+    }
+
+    public void BulkCreate(IEnumerable<Category> categories)
+    {
+        _context.Categories.AddRange(categories);
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Category) });
     }
 
     public void Delete(params Category[] categories)

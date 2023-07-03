@@ -10,21 +10,19 @@ public interface IImportRequestNotifier
     event EventHandler<GenerateThumbnailsRequestEventArgs> GenerateThumbnailsRequest;
     event EventHandler<SetThumbnailsRequestEventArgs> SetThumbnailsRequest;
 
-    void SendImportRequest(string basePath, string[] memePaths);
+    void SendImportRequest(string basePath);
     void SendGenerateThumbnailsRequest(IEnumerable<Meme> memes);
     void SendSetThumbnailsRequest(IEnumerable<(Meme, string?)> memesAndThumbnailPaths);
 }
 
 public class ImportRequestEventArgs : EventArgs
 {
-    public ImportRequestEventArgs(string basePath, string[] memePaths)
+    public ImportRequestEventArgs(string basePath)
     {
         BasePath = basePath;
-        MemePaths = memePaths;
     }
 
     public string BasePath { get; }
-    public string[] MemePaths { get; }
 }
 
 public class GenerateThumbnailsRequestEventArgs : EventArgs

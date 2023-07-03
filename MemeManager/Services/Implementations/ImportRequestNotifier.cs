@@ -12,9 +12,9 @@ public class ImportRequestNotifier : IImportRequestNotifier
     public event EventHandler<GenerateThumbnailsRequestEventArgs>? GenerateThumbnailsRequest;
     public event EventHandler<SetThumbnailsRequestEventArgs>? SetThumbnailsRequest;
 
-    public void SendImportRequest(string basePath, string[] memePaths)
+    public void SendImportRequest(string basePath)
     {
-        ImportRequest.Raise(this, new ImportRequestEventArgs(basePath, memePaths));
+        ImportRequest.Raise(this, new ImportRequestEventArgs(basePath));
     }
 
     public void SendGenerateThumbnailsRequest(IEnumerable<Meme> memes)
