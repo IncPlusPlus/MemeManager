@@ -35,6 +35,7 @@ namespace MemeManager.ViewModels.Implementations
             _importService = importService;
             ImportCommand = ReactiveCommand.CreateFromTask(OpenImportDialog);
 
+            // TODO: Since I don't need to perform operations on the UI thread anymore, there's no need for these observables anymore. ImportService can just call its other methods.  
             #region Terrible, awful hack to allow for a background Task to do all EF operations on the UI thread to avoid DbContext threading issues
 
             _importRequestObservable =

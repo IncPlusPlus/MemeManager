@@ -137,6 +137,17 @@ public class MemeService : IMemeService
 
     private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)
     {
+        /*
+         * If there are no search terms and the category is null, we're probably on the home page.
+         * We want to show the user all their memes on the home page. However, if they have a big library it could
+         * cause the UI to freeze. Instead of showing the user ALL their memes, just show some of the
+         * most recently imported ones.
+         */
+        if (category == null && string.IsNullOrEmpty(searchTerms))
+        {
+            return _context.Memes.OrderBy(meme => meme.TimeAdded).Take(50);
+        }
+
         // TODO: Maybe add an option to include memes from all child categories as well
         _log.LogDebug("Starting search for category {CategoryName}...", category?.Name);
         var query = _context.Memes
@@ -156,6 +167,7 @@ public class MemeService : IMemeService
                 // Call this function last to help with compatability issue https://github.com/ninjanye/SearchExtensions/issues/40
                 .Apply();
         }
+        // TODO: Might want to sort by time added in an else{} block here (so that they're sorted in a reasonable way if they're not already being sorted by search relevance)
 
         return query;
     }
