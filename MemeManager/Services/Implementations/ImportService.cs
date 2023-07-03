@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using MemeManager.Extensions;
 using MemeManager.Persistence.Entity;
@@ -133,10 +135,12 @@ public class ImportService : IImportService
 
         var thumbnailJobId = _statusService.AddJob("Generating thumbnails", 0, count);
         var startTime = Stopwatch.GetTimestamp();
-        var memesAndThumbnailPaths = new List<(Meme, string?)>();
-        // TODO: See if this can be parallelized into a threadpool or something so it doesn't take forever to load
-        // thumbnails one-by-one in a big library.
-        foreach (var (meme, index) in memes.WithIndex())
+        var options = new ParallelOptions { MaxDegreeOfParallelism = 3 };
+        var current = 0;
+        var memesAndThumbnailPaths = new ConcurrentBag<(Meme, string?)>();
+
+        // TODO: If I ever add cancellable tasks, this cancellation token will come in handy
+        await Parallel.ForEachAsync(memes, options, async (meme, token) =>
         {
             try
             {
@@ -153,8 +157,12 @@ public class ImportService : IImportService
             {
                 _log.LogError(e, "Failed to generate thumbnail for meme at path '{MemePath}'", meme.Path);
             }
-            finally { _statusService.UpdateJob(thumbnailJobId, index, count); }
-        }
+            finally
+            {
+                Interlocked.Increment(ref current);
+                _statusService.UpdateJob(thumbnailJobId, current, count);
+            }
+        });
 
         var elapsedTime = Stopwatch.GetElapsedTime(startTime);
         _log.LogInformation("Finished generating thumbnails in {Time}", elapsedTime);
