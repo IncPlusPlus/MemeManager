@@ -14,126 +14,112 @@ namespace MemeManager.Services.Implementations;
 
 public class MemeService : IMemeService
 {
+    private readonly MemeManagerContext _context;
     private readonly IDbChangeNotifier _dbChangeNotifier;
     private readonly ILogger _log;
 
     public MemeService(MemeManagerContext context, IDbChangeNotifier dbChangeNotifier, ILogger logger)
     {
+        _context = context;
         _dbChangeNotifier = dbChangeNotifier;
         _log = logger;
     }
 
-    public IMemeService NewInstance(MemeManagerContext separateContext)
-    {
-        return new MemeService(separateContext, this._dbChangeNotifier, this._log);
-    }
-
     public IEnumerable<Meme> GetAll()
     {
-        using var context = new MemeManagerContext();
-        return context.Memes.AsNoTracking().ToList();
+        return _context.Memes.AsNoTracking().ToList();
     }
 
     public IEnumerable<Meme> GetFiltered(Category? category, string? searchTerms)
     {
-        using var context = new MemeManagerContext();
-        return GetFilteredInternal(category, searchTerms, context).ToList();
+        return GetFilteredInternal(category, searchTerms).ToList();
     }
 
     public Task<List<Meme>> GetFilteredAsync(Category? category, string? searchTerms, CancellationToken token)
     {
-        using var context = new MemeManagerContext();
-        return GetFilteredInternal(category, searchTerms, context).ToListAsync(token);
+        return GetFilteredInternal(category, searchTerms).ToListAsync(token);
     }
 
     public Meme? GetById(int id)
     {
-        using var context = new MemeManagerContext();
-        return context.Memes.AsNoTracking().SingleOrDefault(m => m.Id == id);
+        return _context.Memes.AsNoTracking().SingleOrDefault(m => m.Id == id);
     }
 
     public Meme? GetByPath(string path)
     {
-        using var context = new MemeManagerContext();
-        return context.Memes.AsNoTracking().SingleOrDefault(m => m.Path == path);
+        return _context.Memes.AsNoTracking().SingleOrDefault(m => m.Path == path);
     }
 
     public Meme Create(Meme newMeme)
     {
-        using var context = new MemeManagerContext();
-        context.Memes.Attach(newMeme);
-        context.Memes.Add(newMeme);
-        context.SaveChanges();
+        _context.Memes.Add(newMeme);
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
         return newMeme;
     }
 
+    public void BulkCreate(IEnumerable<Meme> memes)
+    {
+        _context.Memes.AddRange(memes);
+        _context.SaveChanges();
+        _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
+    }
+
     public Meme? DeleteById(int id)
     {
-        using var context = new MemeManagerContext();
-        var existingMeme = context.Memes.SingleOrDefault(m => m.Id == id);
+        var existingMeme = _context.Memes.SingleOrDefault(m => m.Id == id);
         try
         {
-            return existingMeme != null ? context.Memes.Remove(existingMeme).Entity : null;
+            return existingMeme != null ? _context.Memes.Remove(existingMeme).Entity : null;
         }
         finally
         {
-            context.SaveChanges();
+            _context.SaveChanges();
         }
     }
 
     public Meme SetCategory(Meme meme, Category? category)
     {
-        using var context = new MemeManagerContext();
-        context.Memes.Attach(meme);
         meme.Category = category;
         //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
-        context.SaveChanges();
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Category) });
         return meme;
     }
 
     public Meme SetTags(Meme meme, params Tag[] tags)
     {
-        using var context = new MemeManagerContext();
-        context.Memes.Attach(meme);
         meme.Tags = tags;
         //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
-        context.SaveChanges();
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Tag) });
         return meme;
     }
 
     public Meme AddTag(Meme meme, Tag tag)
     {
-        using var context = new MemeManagerContext();
-        context.Memes.Attach(meme);
         meme.Tags.Add(tag);
         //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
-        context.SaveChanges();
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Tag) });
         return meme;
     }
 
     public Meme RemoveTag(Meme meme, Tag tag)
     {
-        using var context = new MemeManagerContext();
-        context.Memes.Attach(meme);
         meme.Tags.Remove(tag);
         //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
-        context.SaveChanges();
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme), typeof(Tag) });
         return meme;
     }
 
     public Meme SetThumbnailPath(Meme meme, string? thumbnailPath)
     {
-        using var context = new MemeManagerContext();
-        context.Memes.Attach(meme);
         meme.CachedThumbnailPath = thumbnailPath;
         //TODO: The viewmodels don't reflect the changed data until a query is run again. Maybe fire an event here again or do the ReactiveUI this.WhenAnyValue() stuff
         //TODO: The above TODO seems to not be true. Investigate if I still need to make any change pertaining to the above comment.
-        context.SaveChanges();
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
         return meme;
     }
@@ -142,21 +128,18 @@ public class MemeService : IMemeService
     {
         foreach (var tuple in thumbnails)
         {
-            using var context = new MemeManagerContext();
             var (meme, thumbnailPath) = tuple;
-            context.Memes.Attach(meme);
             meme.CachedThumbnailPath = thumbnailPath;
-            context.SaveChanges();
         }
-
+        _context.SaveChanges();
         _dbChangeNotifier.NotifyOfChanges(new[] { typeof(Meme) });
     }
 
-    private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms, MemeManagerContext context)
+    private IQueryable<Meme> GetFilteredInternal(Category? category, string? searchTerms)
     {
         // TODO: Maybe add an option to include memes from all child categories as well
         _log.LogDebug("Starting search for category {CategoryName}...", category?.Name);
-        var query = context.Memes
+        var query = _context.Memes
             // Return all memes if the category is null. Otherwise, filter by the category.
             .Where(meme => category == null || meme.Category == category);
         if (searchTerms != null && searchTerms.Length > 0)

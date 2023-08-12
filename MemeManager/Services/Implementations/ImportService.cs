@@ -2,14 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MemeManager.Persistence;
+using MemeManager.Extensions;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
@@ -18,54 +18,44 @@ using Xabe.FFmpeg.Downloader;
 
 namespace MemeManager.Services.Implementations;
 
-// TODO: This class's performance could be further improved by performing all the read operations all at once instead
-// reading and then writing the thumbnail for each meme.
 public class ImportService : IImportService
 {
     // TODO: If I ever get around to adding tests, I should add a test that makes sure that the union of these file extensions arrays is an empty array
     // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
-    public static readonly string[] s_imageExtensions = new[]
+    [SuppressMessage("ReSharper", "StringLiteralTypo")]
+    private static readonly string[] s_imageExtensions = new[]
     {
         "jpg", "jpeg", "jfif", "pjpeg", "pjp", "png", "webp", "tif", "tiff", "bmp", "heic", "heif", "avif"
     };
 
-    private static readonly string[] s_animatedImageExtensions = new[] { "gif", "apng" };
+    [SuppressMessage("ReSharper", "StringLiteralTypo")] private static readonly string[] s_animatedImageExtensions = new[] { "gif", "apng" };
 
+    [SuppressMessage("ReSharper", "StringLiteralTypo")]
     private static readonly string[] s_videoExtensions = new[]
     {
         "mp4", "avi", "mov", "wmv", "mkv", "webm", "flv", "f4v", "swf", "avchd", "ass", "ts", "3gp"
     };
 
-    private static readonly string[] s_audioExtensions = new[] { "wav", "flac", "ogg", "mp3", "alac", "aac" };
+    [SuppressMessage("ReSharper", "StringLiteralTypo")] private static readonly string[] s_audioExtensions = new[] { "wav", "flac", "ogg", "mp3", "alac", "aac" };
     private readonly ICategoryService _categoryService;
     private readonly IDbChangeNotifier _dbChangeNotifier;
+    private readonly IImportRequestNotifier _importRequestNotifier;
     private readonly ILogger _log;
     private readonly IMemeService _memeService;
+    private readonly IStatusService _statusService;
     private readonly ITagService _tagService;
-    private int _current;
 
-    private int _total;
-
-
-    public ImportService(ILogger logger, IDbChangeNotifier dbChangeNotifier, IMemeService memeService,
+    public ImportService(ILogger logger, IDbChangeNotifier dbChangeNotifier,
+        IImportRequestNotifier importRequestNotifier, IStatusService statusService, IMemeService memeService,
         ICategoryService categoryService, ITagService tagService)
     {
-        var separateContext = new MemeManagerContext();
         _log = logger;
         _dbChangeNotifier = dbChangeNotifier;
-        _memeService = memeService.NewInstance(separateContext);
-        _categoryService = categoryService.NewInstance(separateContext);
-        _tagService = tagService.NewInstance(separateContext);
-    }
-
-    public double Progress
-    {
-        get
-        {
-            if (_total == 0)
-                return 0;
-            return (double)_current / _total;
-        }
+        _importRequestNotifier = importRequestNotifier;
+        _statusService = statusService;
+        _memeService = memeService;
+        _categoryService = categoryService;
+        _tagService = tagService;
     }
 
     // TODO: Expand this with options
@@ -78,24 +68,50 @@ public class ImportService : IImportService
      * - Skip generating thumbnails
      * - Files to skip (a regexp for a file name or names)
      */
-    public IEnumerable<Meme> ImportFromDirectory(string path)
+    public void ImportFromDirectory(string path)
     {
-        var importedMemes = new List<Meme>();
+        _log.LogInformation("Import requested for path: {MemesPath}", path);
         try
         {
-            _log.LogInformation("IMPORT OF MEMES FROM PATH {MemesPath} STARTING!", path);
-            var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
-            importedMemes = new List<Meme>(files.Length);
-            foreach (var file in files)
+            _importRequestNotifier.SendImportRequest(path);
+        }
+        catch (Exception e)
+        {
+            _log.LogError(e, "Failed to send import request for memes on path {MemesPath}", path);
+        }
+    }
+
+    // TODO: Break this up so that the creation of categories is:
+    // 1. Cached such that instead of checking the database, a cache can be checked to see if a category for a certain path exists
+    // 2. Uses it's own category creation method that
+    //      1. Doesn't notify the UI of a new category being created
+    //      2. Uses its own DBContext instance so as to not run into any DBContext multi-thread access issues if the stupid idiot dumdum retard user decides to perform any action that requires DB access
+    public void ImportFromPaths(string basePath)
+    {
+        _log.LogInformation("Scanning path: {MemesPath}", basePath);
+        var files = Directory.GetFiles(basePath, "*", SearchOption.AllDirectories);
+        _log.LogInformation("Starting import of {NumMemes} files from path {MemesPath}", files.Length, basePath);
+
+        var cats = CreateCategoriesForPaths(basePath, files);
+        var startTimeIteration = Stopwatch.GetTimestamp();
+        var importJobNum = _statusService.AddJob("Importing memes", 0, files.Length);
+        try
+        {
+            var memesToImport = new List<Meme>(files.Length);
+            foreach (var (file, index) in files.WithIndex())
             {
                 // Skip memes we already know about
                 if (_memeService.GetByPath(file) != null)
+                {
+                    _statusService.UpdateJob(importJobNum, index, files.Length);
                     continue;
+                }
                 var fileInfo = new FileInfo(file);
                 var memeType = ClassifyFile(fileInfo);
-                var memeCategory = CreateCategoryIfNotExists(path, file);
-                // TODO: Maybe add a method to MemeService that allows for adding a list of Meme entities to the DB to avoid frequent DB writes and UI updates (because of the notifier being fired for every new meme)
-                importedMemes.Add(_memeService.Create(new Meme()
+                var categoryString = string.Join(Path.DirectorySeparatorChar,
+                    Path.GetRelativePath(basePath, file).Split(Path.DirectorySeparatorChar).SkipLast(1));
+                var memeCategory = categoryString.Length > 0 ? cats[categoryString] : null;
+                memesToImport.Add(new Meme()
                 {
                     Path = file,
                     Name = fileInfo.Name,
@@ -103,54 +119,46 @@ public class ImportService : IImportService
                     Category = memeCategory,
                     TimeAdded = DateTime.Now,
                     AdditionalTerms = ""
-                }));
+                });
+                _statusService.UpdateJob(importJobNum, index, files.Length);
             }
-            _log.LogInformation("IMPORT OF MEMES FROM PATH {MemesPath} SUCCEEDED!", path);
-            return importedMemes;
+            var elapsedTimeIteration = Stopwatch.GetElapsedTime(startTimeIteration);
+            _log.LogInformation("Finished iterating and creating categories in {Time}", elapsedTimeIteration);
+            _log.LogTrace("Created all necessary categories. Attempting to save new memes to the database...");
+            var startTimeSave = Stopwatch.GetTimestamp();
+            _memeService.BulkCreate(memesToImport);
+            var elapsedTimeSave = Stopwatch.GetElapsedTime(startTimeSave);
+            _log.LogInformation("Saved {NumMemes} to the DB in {Time}", files.Length, elapsedTimeSave);
+            _log.LogInformation("Import of memes from path {MemesPath} succeeded!", basePath);
+            _log.LogTrace("Sending GenerateThumbnailsRequest");
+            _importRequestNotifier.SendGenerateThumbnailsRequest(memesToImport);
+            _log.LogTrace("GenerateThumbnailsRequest sent");
         }
         catch (Exception e)
         {
-            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", path);
-            return importedMemes;
+            _log.LogError(e, "IMPORT OF MEMES FROM PATH {MemesPath} FAILED!", basePath);
+        }
+        finally
+        {
+            _statusService.RemoveJob(importJobNum);
         }
     }
 
     public async Task GenerateThumbnails(IEnumerable<Meme> memes)
     {
-        _log.LogInformation("THUMBNAIL GENERATION OF MEMES STARTING!");
-        Stopwatch watch = new Stopwatch();
-        watch.Start();
-        // Maybe some day I'll use System.IProgress for this.
+        _log.LogInformation("Starting thumbnail generation");
+        if (!memes.TryGetNonEnumeratedCount(out var count))
+        {
+            _log.LogError("Tried to count the number of memes to generate thumbnails for but failed");
+        }
 
-        // TODO: See if this can be parallelized into a threadpool or something so it doesn't take forever to load
-        // thumbnails one-by-one in a big library.
-        // Try 1: Not parallel. Kinda slow
-        // foreach (var meme in memes)
-        // {
-        //     try
-        //     {
-        //         var thumbnailPath = meme.MediaType switch
-        //         {
-        //             Meme.FileMediaType.Image => await GenerateThumbnailForImage(meme),
-        //             Meme.FileMediaType.Video => await GenerateThumbnailForVideo(meme),
-        //             Meme.FileMediaType.Gif => await GenerateThumbnailForGif(meme),
-        //             _ => null
-        //         };
-        //         _memeService.SetThumbnailPath(meme, thumbnailPath);
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         _log.LogError(e, "Failed to generate thumbnail for meme at path '{MemePath}'", meme.Path);
-        //     }
-        // }
+        var thumbnailJobId = _statusService.AddJob("Generating thumbnails", 0, count);
+        var startTime = Stopwatch.GetTimestamp();
+        var options = new ParallelOptions { MaxDegreeOfParallelism = 3 };
+        var current = 0;
+        var memesAndThumbnailPaths = new ConcurrentBag<(Meme, string?)>();
 
-        // Try 2: Parallel but lots of DB requests.
-        var options = new ParallelOptions { MaxDegreeOfParallelism = 2 };
-        var gotCount = memes.TryGetNonEnumeratedCount(out this._total);
-        this._current = 0;
-        var thumbnails = new ConcurrentBag<(Meme, string?)>();
-
-        // CancellationToken is ignored for now but I might use this if I make this Task cancelable
+        // TODO: If I ever add cancellable tasks, this cancellation token will come in handy
         await Parallel.ForEachAsync(memes, options, async (meme, token) =>
         {
             try
@@ -162,7 +170,7 @@ public class ImportService : IImportService
                     Meme.FileMediaType.Gif => await GenerateThumbnailForGif(meme),
                     _ => null
                 };
-                thumbnails.Add((meme, thumbnailPath));
+                memesAndThumbnailPaths.Add((meme, thumbnailPath));
             }
             catch (Exception e)
             {
@@ -170,14 +178,20 @@ public class ImportService : IImportService
             }
             finally
             {
-                Interlocked.Increment(ref this._current);
+                Interlocked.Increment(ref current);
+                _statusService.UpdateJob(thumbnailJobId, current, count);
             }
         });
-        watch.Stop();
-        // _log.LogInformation("THUMBNAIL GENERATION OF MEMES FINISHED! Saving...");
-        _log.LogInformation("Finished. Elapsed={TimeElapsed}", watch.Elapsed);
-        _memeService.SetThumbnailPaths(thumbnails);
-        // _log.LogInformation("Thumbnails saved!");
+
+        var elapsedTime = Stopwatch.GetElapsedTime(startTime);
+        _log.LogInformation("Finished generating thumbnails in {Time}", elapsedTime);
+        _statusService.RemoveJob(thumbnailJobId);
+        _importRequestNotifier.SendSetThumbnailsRequest(memesAndThumbnailPaths);
+    }
+
+    public void SetThumbnails(IEnumerable<(Meme, string?)> memesAndThumbnailPaths)
+    {
+        _memeService.SetThumbnailPaths(memesAndThumbnailPaths);
     }
 
     private async Task<string?> GenerateThumbnailForImage(Meme meme)
@@ -224,7 +238,13 @@ public class ImportService : IImportService
         }
 
         var frames = image.Frames;
+        // var firstFrame = image.Frames[0];
         var firstFrame = frames.CloneFrame(0);
+        // GifFrameMetadata metaData = firstFrame.Metadata.GetGifMetadata();
+        // var frameDelay = metaData.FrameDelay;
+        // firstFrame = image.Frames[metaData.FrameDelay];
+        // var result = new Image<Rgba32>(size.Width, size.Height);
+        // result[0, 0] = firstFrame.;
         var size = firstFrame.Size();
         if (size.Height > size.Width)
         {
@@ -234,7 +254,21 @@ public class ImportService : IImportService
         {
             firstFrame.Mutate(x => x.Resize(200, 0));
         }
+
         await firstFrame.SaveAsync(thumbnailPath);
+
+
+        // foreach (ImageFrame frame in image.Frames)
+        // {
+        //     GifFrameMetadata metaData = frame.Metadata.GetGifMetadata();
+        //     // metaData.FrameDelay = frameDelay;
+        //     // metaData.ColorTableLength = colorTableLength;
+        //     // metaData.DisposalMethod = disposalMethod;
+        // }
+        //
+        // image.Mutate(x => x.Resize(0,200));
+        // await image.SaveAsync(thumbnailPath);
+
         return thumbnailPath;
     }
 
@@ -261,7 +295,8 @@ public class ImportService : IImportService
         await Task.Run(async () =>
         {
             // TODO: Check what Windows does. It definitely doesn't take the first frame. It might take a frame at some percentage of the way through the video
-            var conversion = await FFmpeg.Conversions.FromSnippet.Snapshot(meme.Path, thumbnailPath, TimeSpan.FromSeconds(0));
+            var conversion =
+                await FFmpeg.Conversions.FromSnippet.Snapshot(meme.Path, thumbnailPath, TimeSpan.FromSeconds(0));
             await conversion.Start();
         });
 
@@ -275,6 +310,7 @@ public class ImportService : IImportService
         {
             image.Mutate(x => x.Resize(200, 0));
         }
+
         await image.SaveAsync(thumbnailPath);
 
         return thumbnailPath;
@@ -301,60 +337,97 @@ public class ImportService : IImportService
         return fileType;
     }
 
-    private Category? CreateCategoryIfNotExists(string memesBaseDir, string memePath)
+    private Dictionary<string, Category?> CreateCategoriesForPaths(string memesBaseDir, string[] files)
     {
-        var relativePath = Path.GetRelativePath(memesBaseDir, memePath);
-        if (!relativePath.Contains(Path.DirectorySeparatorChar))
-        {
-            return null;
-        }
-
-        // Omit the last entry as it will contain the file's name. We don't want that part of the path.
-        var nestedCategories = relativePath.Split(Path.DirectorySeparatorChar).SkipLast(1);
-        Category? currentParent = null;
-        foreach (var categoryName in nestedCategories)
-        {
-            // Top level category
-            if (currentParent == null)
+        var startTimeCats = Stopwatch.GetTimestamp();
+        // Requires GetAll to NOT have asNoTracking applied to it because we need the Parent property to be loaded
+        Dictionary<string, Category?> existingCategories = _categoryService.GetAll(asNoTracking: false).ToDictionary(
+            category =>
             {
-                var topLevel = _categoryService.GetTopLevelCategories();
-                var existingTopLevelCategory = topLevel.FirstOrDefault(c => c.Name == categoryName);
-                if (existingTopLevelCategory == null)
+                var categoryPathString = category.Name;
+                var currentCategory = category;
+                while (currentCategory != null)
                 {
-                    var newTopLevelCategory = _categoryService.Create(new Category() { Name = categoryName });
-                    currentParent = newTopLevelCategory;
-                }
-                else
-                {
-                    currentParent = existingTopLevelCategory;
+                    categoryPathString =
+                        (currentCategory.Parent == null ?
+                            "" :
+                            currentCategory.Parent.Name + Path.DirectorySeparatorChar) + categoryPathString;
+                    currentCategory = currentCategory.Parent;
                 }
 
-                continue;
-            }
-            else
+                return categoryPathString;
+            })!;
+        var existingAndNewCategories = files.Select(s => Path.GetRelativePath(memesBaseDir, s))
+            .Where(s => s.Contains(Path.DirectorySeparatorChar))
+            .Select(s => string.Join(Path.DirectorySeparatorChar, s.Split(Path.DirectorySeparatorChar).SkipLast(1)))
+            .Distinct().ToDictionary(s => s,
+                s => existingCategories.TryGetValue(s, out var existingCat) ? existingCat : null);
+
+        var merged = existingCategories
+            .Concat(existingAndNewCategories.Where(kvp => !existingCategories.ContainsKey(kvp.Key)))
+            .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+        var categoryJobNum = _statusService.AddJob("Creating categories", 0, existingAndNewCategories.Count);
+        var categoriesToCreate = new List<Category>();
+        foreach (var (entry, index) in existingAndNewCategories.WithIndex())
+        {
+            if (entry.Value == null)
             {
-                // Check based on currentParent's children
-                var existingCategory = currentParent.Children.FirstOrDefault(c => c.Name == categoryName);
-                if (existingCategory == null)
+                var possiblyNewCat = CreateCategoryIfNotExists(entry.Key, merged, 0);
+                if (possiblyNewCat != null)
                 {
-                    var newCategory =
-                        _categoryService.Create(new Category() { Name = categoryName, Parent = currentParent });
-                    currentParent = newCategory;
-                }
-                else
-                {
-                    currentParent = existingCategory;
+                    categoriesToCreate.Add(possiblyNewCat);
                 }
             }
+            _statusService.UpdateJob(categoryJobNum, index, existingAndNewCategories.Count);
         }
 
-        if (currentParent != null)
+
+        var elapsedTimeCats = Stopwatch.GetElapsedTime(startTimeCats);
+        _log.LogInformation("Finished creating all categories in {Time}", elapsedTimeCats);
+        _categoryService.BulkCreate(categoriesToCreate);
+        _statusService.RemoveJob(categoryJobNum);
+
+        return merged;
+    }
+
+    private Category? CreateCategoryIfNotExists(string catPath, Dictionary<string, Category?> cats, int depth)
+    {
+        var catPathParts = catPath.Split(Path.DirectorySeparatorChar).ToArray();
+        if (depth == catPathParts.Length)
         {
-            using var context = new MemeManagerContext();
-            // I can't get CategoryService.GetTopLevelCategories() to not fucking return tracked CategoryProxy objects
-            context.Categories.Entry(currentParent).State = EntityState.Detached;
-        }
+            // Not even the first part of the category path exists as a category. Create a category for each part of the path.
+            var deepestCat = new Category() { Name = catPathParts[^1] };
+            cats[string.Join(Path.DirectorySeparatorChar, catPathParts)] = deepestCat;
+            var currCat = deepestCat;
+            for (var i = 1; i < catPathParts.Length; i++)
+            {
+                currCat.Parent = new Category() { Name = catPathParts[^(1 + i)] };
+                cats[string.Join(Path.DirectorySeparatorChar, catPathParts.SkipLast(i))] = currCat.Parent;
+                currCat = currCat.Parent;
+            }
 
-        return currentParent;
+            return deepestCat;
+        }
+        if (cats.TryGetValue(string.Join(Path.DirectorySeparatorChar, catPathParts.SkipLast(depth)), out var existingCat) && existingCat != null)
+        {
+            // Found base
+            var deepestCat = new Category() { Name = catPathParts[^1] };
+            cats[string.Join(Path.DirectorySeparatorChar, catPathParts)] = deepestCat;
+            var currCat = deepestCat;
+
+            for (int i = 1; i < depth; i++)
+            {
+                currCat.Parent = new Category() { Name = catPathParts[^(1 + i)] };
+                cats[string.Join(Path.DirectorySeparatorChar, catPathParts.SkipLast(i))] = currCat.Parent;
+                currCat = currCat.Parent;
+            }
+            currCat.Parent = existingCat;
+            return deepestCat;
+        }
+        else
+        {
+            return CreateCategoryIfNotExists(catPath, cats, depth + 1);
+        }
     }
 }
