@@ -3,20 +3,16 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
-using DynamicData.Binding;
 using MemeManager.DependencyInjection;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
-using Microsoft.Extensions.Logging;
-using ReactiveUI;
+using MemeManager.ViewModels;
 using Splat;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace MemeManager.Models;
 
-public class CategoryTreeNodeModel : ReactiveObject
+public class CategoryTreeNodeModel : ViewModelBase
 {
     private Category _category;
     private ICategoryService _categoryService;
@@ -36,45 +32,45 @@ public class CategoryTreeNodeModel : ReactiveObject
         _hasChildren = category.Children?.Count > 0;
         _memeCount = category.Memes.Count;
 
-        // Maybe bind this to a SourceCache instead
-        this.Category.Children.CollectionChanged += (sender, args) =>
-        {
-            switch (args.Action)
-            {
-                case NotifyCollectionChangedAction.Add when args.NewItems?[0] is Category newCategory:
-                    _children?.Add(new CategoryTreeNodeModel(newCategory, _categoryService));
-                    break;
-                case NotifyCollectionChangedAction.Remove when args.OldItems?[0] is Category oldCategory:
-                    {
-                        var nodeToRemove = _children?.Where(node => node._category.Id == oldCategory.Id).First();
-                        if (nodeToRemove == null)
-                        {
-                            _log.LogError("Tried to remove a category with id {OldId} and name {OldName} from CategoryTreeNodeModel but couldn't find the node with a matching ID", oldCategory.Id, oldCategory.Id);
-                        }
-                        else
-                        { _children?.Remove(nodeToRemove); }
-                        break;
-                    }
-                case NotifyCollectionChangedAction.Replace:
-                case NotifyCollectionChangedAction.Move:
-                case NotifyCollectionChangedAction.Reset:
-                default:
-                    _log.LogWarning("Encountered unhandled NotifyCollectionChangedAction {Action} in CategoryTreeNodeModel", args.Action);
-                    break;
-            }
-        };
+        // // Maybe bind this to a SourceCache instead
+        // this.Category.Children.CollectionChanged += (sender, args) =>
+        // {
+        //     switch (args.Action)
+        //     {
+        //         case NotifyCollectionChangedAction.Add when args.NewItems?[0] is Category newCategory:
+        //             _children?.Add(new CategoryTreeNodeModel(newCategory, _categoryService));
+        //             break;
+        //         case NotifyCollectionChangedAction.Remove when args.OldItems?[0] is Category oldCategory:
+        //             {
+        //                 var nodeToRemove = _children?.Where(node => node._category.Id == oldCategory.Id).First();
+        //                 if (nodeToRemove == null)
+        //                 {
+        //                     _log.LogError("Tried to remove a category with id {OldId} and name {OldName} from CategoryTreeNodeModel but couldn't find the node with a matching ID", oldCategory.Id, oldCategory.Id);
+        //                 }
+        //                 else
+        //                 { _children?.Remove(nodeToRemove); }
+        //                 break;
+        //             }
+        //         case NotifyCollectionChangedAction.Replace:
+        //         case NotifyCollectionChangedAction.Move:
+        //         case NotifyCollectionChangedAction.Reset:
+        //         default:
+        //             _log.LogWarning("Encountered unhandled NotifyCollectionChangedAction {Action} in CategoryTreeNodeModel", args.Action);
+        //             break;
+        //     }
+        // };
+        //
+        // // Handles when a category is renamed
+        // this.WhenValueChanged(x => x.Name)
+        //     // .Throttle(TimeSpan.FromMilliseconds(5000))
+        //     .ObserveOn(RxApp.MainThreadScheduler)
+        //     .Where(s => s != null && !s.Equals(Category.Name))
+        //     .Subscribe(s =>
+        //     {
+        //         _categoryService.Rename(Category, s ?? string.Empty);
+        //     });
 
-        // Handles when a category is renamed
-        this.WhenValueChanged(x => x.Name)
-            // .Throttle(TimeSpan.FromMilliseconds(5000))
-            .ObserveOn(RxApp.MainThreadScheduler)
-            .Where(s => s != null && !s.Equals(Category.Name))
-            .Subscribe(s =>
-            {
-                _categoryService.Rename(Category, s ?? string.Empty);
-            });
-
-        Category.Memes.CollectionChanged += MemesChanged;
+        // Category.Memes.CollectionChanged += MemesChanged;
     }
 
     public bool IsRoot => Category.Parent == null;

@@ -5,7 +5,6 @@ using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -14,30 +13,30 @@ using Avalonia.Data.Converters;
 using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using DynamicData;
 using HanumanInstitute.MvvmDialogs;
 using MemeManager.DependencyInjection;
-using MemeManager.Extensions;
 using MemeManager.Models;
 using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using MemeManager.ViewModels.Interfaces;
 using ReactiveUI;
+using Realms;
 using Splat;
 
 namespace MemeManager.ViewModels.Implementations;
 
-public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
+public class CategoriesListViewModel : ViewModelBase, ICategoriesListViewModel
 {
     private readonly IObservable<EventPattern<DbChangeEventArgs>> _dbChangedObservable;
     private readonly IDbChangeNotifier _dbChangeNotifier;
     private readonly IDialogService _dialogService;
-    private ObservableCollection<Category> _categories;
+    private IEnumerable<Category> _categories;
     private ICategoryService _categoryService;
     private IFilterObserverService _filterObserver;
     private FolderIconConverter? _folderIconConverter;
     private IMemeService _memeService;
     private ReadOnlyObservableCollection<CategoryTreeNodeModel> _nodeViewModels;
+    private readonly Realm _realm = null!;
 
     public CategoriesListViewModel(IDialogService dialogService, IFilterObserverService filterObserverService, IDbChangeNotifier dbChangeNotifier,
         ICategoryService categoryService, IMemeService memeService)
@@ -47,6 +46,7 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
         _dbChangeNotifier = dbChangeNotifier;
         _categoryService = categoryService;
         _memeService = memeService;
+        _realm = Realm.GetInstance();
         var assetLoader = AvaloniaLocator.Current.GetService<IAssetLoader>();
 
         SelectedNodes = new ObservableCollection<CategoryTreeNodeModel>();
@@ -67,51 +67,52 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
             }
         }
 
-        _dbChangedObservable = Observable.FromEventPattern<EventHandler<DbChangeEventArgs>, DbChangeEventArgs>(
-            handler => _dbChangeNotifier.EntitiesUpdated += handler,
-            handler => _dbChangeNotifier.EntitiesUpdated -= handler);
+        // _dbChangedObservable = Observable.FromEventPattern<EventHandler<DbChangeEventArgs>, DbChangeEventArgs>(
+        //     handler => _dbChangeNotifier.EntitiesUpdated += handler,
+        //     handler => _dbChangeNotifier.EntitiesUpdated -= handler);
 
-        _categories = new ObservableCollection<Category>(_categoryService.GetTopLevelCategories());
+        // _categories = new ObservableCollection<Category>(_categoryService.GetTopLevelCategories());
+        _categories = _realm.All<Category>().Where(category => category.Parent == null);
 
-        var models = new SourceCache<Category, int>(c => c.Id);
+        // var models = new SourceCache<Category, ObjectId>(c => c.Id);
+        //
+        // // Modeled from https://stackoverflow.com/a/53874449/1687436
+        // var transformed = models
+        //     .Connect()
+        //     /*
+        //      * Avoids recreating the TreeNodeViewModel by instead changing its category property. While this might not
+        //      * change the value (since the EF proxy object will be the same instance just with updated values), it does
+        //      * provide two nice features.
+        //      *
+        //      * 1. When the models variable is updated (through models.AddOrUpdate()), the existing TreeNodeViewModels
+        //      * won't be replaced.
+        //      * 2. We can perform hacky solutions like calling other methods inside the Category setter if we absolutely
+        //      * have to.
+        //      */
+        //     .TransformWithInlineUpdate(u => new CategoryTreeNodeModel(u, categoryService),
+        //         (previousViewModel, updatedCategory) =>
+        //         {
+        //             previousViewModel.Category = updatedCategory;
+        //         })
+        //     .ObserveOn(RxApp.MainThreadScheduler)
+        //     .Bind(out _nodeViewModels)
+        //     .Subscribe();
+        //
+        // models.AddOrUpdate(_realm.All<Category>().Where(category => category.Parent == null));
 
-        // Modeled from https://stackoverflow.com/a/53874449/1687436
-        var transformed = models
-            .Connect()
-            /*
-             * Avoids recreating the TreeNodeViewModel by instead changing its category property. While this might not
-             * change the value (since the EF proxy object will be the same instance just with updated values), it does
-             * provide two nice features.
-             *
-             * 1. When the models variable is updated (through models.AddOrUpdate()), the existing TreeNodeViewModels
-             * won't be replaced.
-             * 2. We can perform hacky solutions like calling other methods inside the Category setter if we absolutely
-             * have to.
-             */
-            .TransformWithInlineUpdate(u => new CategoryTreeNodeModel(u, categoryService),
-                (previousViewModel, updatedCategory) =>
-                {
-                    previousViewModel.Category = updatedCategory;
-                })
-            .ObserveOn(RxApp.MainThreadScheduler)
-            .Bind(out _nodeViewModels)
-            .Subscribe();
-
-        models.AddOrUpdate(_categoryService.GetTopLevelCategories());
-
-        this.WhenAnyObservable(x => x._dbChangedObservable)
-            .Select(x => x.EventArgs)
-            .Where(x => x.TypeRelevant(typeof(Category)))
-            .Subscribe(x =>
-            {
-                var topLevelCategories = _categoryService.GetTopLevelCategories();
-                // Determine if there have been any removed categories
-                var removedCategories = NodeViewModels.Where(model =>
-                    !topLevelCategories.Select(c => c.Id).Contains(model.Category.Id)).Select(n => n.Category);
-                models.Remove(removedCategories);
-                // In-place update the existing category models
-                models.AddOrUpdate(topLevelCategories);
-            });
+        // this.WhenAnyObservable(x => x._dbChangedObservable)
+        //     .Select(x => x.EventArgs)
+        //     .Where(x => x.TypeRelevant(typeof(Category)))
+        //     .Subscribe(x =>
+        //     {
+        //         var topLevelCategories = _categoryService.GetTopLevelCategories();
+        //         // Determine if there have been any removed categories
+        //         var removedCategories = NodeViewModels.Where(model =>
+        //             !topLevelCategories.Select(c => c.Id).Contains(model.Category.Id)).Select(n => n.Category);
+        //         models.Remove(removedCategories);
+        //         // In-place update the existing category models
+        //         models.AddOrUpdate(topLevelCategories);
+        //     });
 
         SelectedNodes.CollectionChanged += TreeView_OnSelectionChanged;
         NewCategoryCommand = ReactiveCommand.CreateFromTask(CreateNewCategory);
@@ -120,7 +121,7 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
     }
 
     public ReadOnlyObservableCollection<CategoryTreeNodeModel> NodeViewModels { get => _nodeViewModels; }
-    public ObservableCollection<Category> Categories { get { return _categories; } }
+    public IEnumerable<Category> Categories { get { return _categories; } }
     public ObservableCollection<CategoryTreeNodeModel> SelectedNodes { get; }
     public ReactiveCommand<Unit, Unit> NewCategoryCommand { get; }
     public ReactiveCommand<Collection<CategoryTreeNodeModel>, Unit> DeleteCategoryCommand { get; }
@@ -162,7 +163,11 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
         {
             var name = dialogViewModel.Text;
             // TODO: This needs to be initialized with the correct parent directory
-            _categoryService.Create(new Category() { Name = name });
+            // _categoryService.Create(new Category() { Name = name });
+            await _realm.WriteAsync(() =>
+            {
+                _realm.Add(new Category() { Name = name });
+            });
         }
     }
 
@@ -179,7 +184,11 @@ public class CategoriesListViewModel : ReactiveObject, ICategoriesListViewModel
         {
             var name = dialogViewModel.Text;
             // TODO: This needs to be initialized with the correct parent directory
-            _categoryService.Create(new Category() { Name = name, Parent = parentCategory });
+            // _categoryService.Create(new Category() { Name = name, Parent = parentCategory });
+            await _realm.WriteAsync(() =>
+            {
+                _realm.Add(new Category() { Name = name, Parent = parentCategory });
+            });
         }
     }
 

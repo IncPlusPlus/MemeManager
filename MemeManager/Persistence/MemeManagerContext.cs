@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using MemeManager.Persistence.Entity;
+﻿using MemeManager.Persistence.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Splat;
@@ -14,11 +12,11 @@ public sealed class MemeManagerContext : DbContext
         // https://stackoverflow.com/a/50042017/1687436
         // Console.WriteLine("New database created: "+ Database.EnsureCreated());
 
-        var path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData,
-            Environment.SpecialFolderOption.DoNotVerify);
-        // Ensure the directory and all its parents exist.
-        Directory.CreateDirectory(path);
-        DbPath = System.IO.Path.Join(path, "MemeManager.db");
+        // var path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData,
+        //     Environment.SpecialFolderOption.DoNotVerify);
+        // // Ensure the directory and all its parents exist.
+        // Directory.CreateDirectory(path);
+        // DbPath = System.IO.Path.Join(path, "MemeManager.db");
     }
 
     public DbSet<Meme> Memes { get; set; }

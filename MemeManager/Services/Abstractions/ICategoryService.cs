@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using MemeManager.Persistence.Entity;
+using MongoDB.Bson;
 
 namespace MemeManager.Services.Abstractions;
 
@@ -9,7 +10,7 @@ public interface ICategoryService
 
     IEnumerable<Category> GetTopLevelCategories();
 
-    Category? GetById(int id);
+    Category? GetById(ObjectId id);
 
     Category Create(Category newCategory);
     void BulkCreate(IEnumerable<Category> newCategory);

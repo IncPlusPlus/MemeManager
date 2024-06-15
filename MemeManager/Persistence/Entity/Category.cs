@@ -1,23 +1,24 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using MongoDB.Bson;
+using Realms;
 
 namespace MemeManager.Persistence.Entity;
 
-public class Category
+public partial class Category : IRealmObject
 {
-    private readonly ObservableCollection<Category> _children =
-        new ObservableCollection<Category>();
+    public IList<Category> Children { get; } = null!;
 
-    private readonly ObservableCollection<Meme> _memes =
-        new ObservableCollection<Meme>();
+    public IList<Meme> Memes { get; } = null!;
 
-    public int Id { get; set; }
+    [PrimaryKey]
+    public ObjectId Id { get; set; } = ObjectId.GenerateNewId();
     public string Name { get; set; }
 
-    public virtual Category? Parent { get; set; }
+    public Category? Parent { get; set; }
 
     // https://docs.microsoft.com/en-us/ef/ef6/querying/local-data#wpf-binding-to-navigation-properties
-    public virtual ObservableCollection<Category> Children { get { return _children; } }
-    public virtual ObservableCollection<Meme> Memes { get { return _memes; } }
+    // public IList<Category> Children { get { return _children; } }
+    // public IList<Meme> Memes { get { return _memes; } }
 
     // TODO: Add a toString method that outputs ParentCategory/SubCategory/ThisCategory instead of just ThisCategory
 }

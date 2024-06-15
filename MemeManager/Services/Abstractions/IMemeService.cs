@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using MemeManager.Persistence.Entity;
+using MongoDB.Bson;
 
 namespace MemeManager.Services.Abstractions;
 
@@ -12,7 +13,7 @@ public interface IMemeService
     IEnumerable<Meme> GetFiltered(Category? category, string? searchTerms);
     Task<List<Meme>> GetFilteredAsync(Category? category, string? searchTerms, CancellationToken token);
 
-    Meme? GetById(int id);
+    Meme? GetById(ObjectId id);
 
     Meme? GetByPath(string path);
 
@@ -20,11 +21,11 @@ public interface IMemeService
 
     void BulkCreate(IEnumerable<Meme> memes);
 
-    Meme? DeleteById(int id);
+    Meme? DeleteById(ObjectId id);
 
     Meme SetCategory(Meme meme, Category? category);
 
-    Meme SetTags(Meme meme, params Tag[] tags);
+    // Meme SetTags(Meme meme, params Tag[] tags);
     Meme AddTag(Meme meme, Tag tag);
     Meme RemoveTag(Meme meme, Tag tag);
 

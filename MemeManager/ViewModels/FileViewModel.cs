@@ -1,5 +1,6 @@
 ﻿using System.Reactive;
 using MemeManager.Persistence.Entity;
+using MongoDB.Bson;
 using ReactiveUI;
 
 namespace MemeManager.ViewModels;
@@ -16,7 +17,7 @@ public class FileViewModel : ViewModelBase
         OpenRecentCommand = ReactiveCommand.Create<object>(OpenRecent);
     }
 
-    public int Id => _meme.Id;
+    public ObjectId Id => _meme.Id;
     public string Name => _meme.Name;
 
     internal Meme Meme => _meme;

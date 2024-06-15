@@ -6,7 +6,7 @@ using ReactiveUI;
 
 namespace MemeManager.ViewModels.Implementations;
 
-public class SearchbarViewModel : ReactiveObject, ISearchbarViewModel
+public class SearchbarViewModel : ViewModelBase, ISearchbarViewModel
 {
     private IFilterObserverService _filterObserver;
     private string? _searchText;

@@ -1,12 +1,15 @@
 ﻿using System.Collections.Generic;
+using MongoDB.Bson;
+using Realms;
 
 namespace MemeManager.Persistence.Entity;
 
-public class Tag
+public partial class Tag : IRealmObject
 {
-    public int Id { get; set; }
+    [PrimaryKey]
+    public ObjectId Id { get; set; } = ObjectId.GenerateNewId();
     public string Name { get; set; }
-    public virtual ICollection<Meme> Memes { get; set; }
+    public IList<Meme> Memes { get; } = null!;
 
     public override string ToString()
     {

@@ -57,10 +57,10 @@ namespace MemeManager.ViewModels.Implementations
                 .ObserveOn(RxApp.TaskpoolScheduler)
                 .Subscribe(x => importService.ImportFromPaths(x.BasePath));
 
-            this.WhenAnyObservable(x => x._generateThumbnailsRequestObservable)
-                .Select(x => x.EventArgs)
-                .ObserveOn(RxApp.TaskpoolScheduler)
-                .Subscribe(x => importService.GenerateThumbnails(x.Memes));
+            // this.WhenAnyObservable(x => x._generateThumbnailsRequestObservable)
+            //     .Select(x => x.EventArgs)
+            //     .ObserveOn(RxApp.TaskpoolScheduler)
+            //     .Subscribe(x => importService.GenerateThumbnails(x.Memes));
 
             this.WhenAnyObservable(x => x._setThumbnailsRequestObservable)
                 .Select(x => x.EventArgs)

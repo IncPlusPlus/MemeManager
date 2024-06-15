@@ -1,10 +1,7 @@
-﻿using System.Linq;
-using MemeManager.Persistence;
+﻿using MemeManager.Persistence;
 using MemeManager.Services.Abstractions;
 using MemeManager.Services.Implementations;
 using MemeManager.ViewModels.Configuration;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Splat;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -48,14 +45,14 @@ public class DataAccessBootstrapper
         // However, that's a pain in the ass and I don't want to do it properly yet. I kept running into https://stackoverflow.com/a/48204159/1687436 when I was making a new MemeManagerContext() for each repository.
         // This is absolutely NOT how Entity Framework should be used. See https://docs.microsoft.com/en-us/ef/core/dbcontext-configuration/#the-dbcontext-lifetime
         var dbContext = new MemeManagerContext();
-        var numPendingMigrations = dbContext.Database.GetPendingMigrations().Count();
-        if (numPendingMigrations > 0)
-        {
-            logger.LogInformation("The database has {NumMigrations} pending migration(s). Attempting to apply them now",
-                numPendingMigrations);
-            dbContext.Database.Migrate();
-            logger.LogInformation("Applied migrations successfully");
-        }
+        // var numPendingMigrations = dbContext.Database.GetPendingMigrations().Count();
+        // if (numPendingMigrations > 0)
+        // {
+        //     logger.LogInformation("The database has {NumMigrations} pending migration(s). Attempting to apply them now",
+        //         numPendingMigrations);
+        //     dbContext.Database.Migrate();
+        //     logger.LogInformation("Applied migrations successfully");
+        // }
 
         services.RegisterLazySingleton<ITagService>(() => new TagService(dbContext, dbChangeNotifier, logger));
         services.RegisterLazySingleton<ICategoryService>(() =>

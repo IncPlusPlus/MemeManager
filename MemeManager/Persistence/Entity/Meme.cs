@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using MongoDB.Bson;
+using Realms;
 
 namespace MemeManager.Persistence.Entity;
 
-public class Meme
+public partial class Meme : IRealmObject
 {
     public enum FileMediaType
     {
@@ -14,7 +16,8 @@ public class Meme
         Other
     }
 
-    public int Id { get; set; }
+    [PrimaryKey]
+    public ObjectId Id { get; set; } = ObjectId.GenerateNewId();
 
     /// <summary>
     /// The name of the meme. If a meme hasn't been explicitly named, it'll just be displayed with its file name.
@@ -26,18 +29,24 @@ public class Meme
     public string? CachedThumbnailPath { get; set; }
 
     // TODO: I might want to make this default to the file creation date when the library is first initialized
-    public DateTime TimeAdded { get; set; }
+    public DateTimeOffset TimeAdded { get; set; }
 
     /// <summary>
     /// A tag is for labelling a meme with all relevant terms
     /// </summary>
-    public virtual ICollection<Tag> Tags { get; set; }
+    public IList<Tag> Tags { get; } = null!;
 
-    public virtual Category? Category { get; set; }
+    public Category? Category { get; set; }
 
     // TODO: Change AdditionalTerms to Keywords
     public string AdditionalTerms { get; set; }
-    public FileMediaType MediaType { get; set; }
+    // Seems that Atlas can't handle enums. Their AI suggested this might work. We'll see if that can be trusted...
+    private string _MediaType { get; set; }
+    public FileMediaType MediaType
+    {
+        get => Enum.Parse<FileMediaType>(_MediaType);
+        set => _MediaType = value.ToString();
+    }
 
     /// <summary>
     /// True if the user has already added their desired name, tags, and category to this meme. False if this file

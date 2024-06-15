@@ -8,7 +8,7 @@ using ReactiveUI;
 
 namespace MemeManager.ViewModels.Implementations;
 
-public class StatusBarViewModel : ReactiveObject, IStatusBarViewModel
+public class StatusBarViewModel : ViewModelBase, IStatusBarViewModel
 {
     private readonly ObservableAsPropertyHelper<int> _currentProgress;
     private readonly ObservableAsPropertyHelper<bool> _hasProgress;

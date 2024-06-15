@@ -25,6 +25,7 @@ namespace MemeManager
 
         /// <inheritdoc />
         public virtual bool Match(object? data) => data is ReactiveObject;
+        // public virtual bool Match(object? data) => data is ObservableObject;
 
         /// <summary>
         /// Creates a view based on the specified view model.

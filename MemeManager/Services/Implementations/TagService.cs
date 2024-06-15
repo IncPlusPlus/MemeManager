@@ -5,6 +5,7 @@ using MemeManager.Persistence.Entity;
 using MemeManager.Services.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson;
 
 namespace MemeManager.Services.Implementations;
 
@@ -26,7 +27,7 @@ public class TagService : ITagService
         return _context.Tags.ToList();
     }
 
-    public Tag? GetById(int id)
+    public Tag? GetById(ObjectId id)
     {
         return _context.Tags.AsNoTracking().SingleOrDefault(t => t.Id == id);
     }
@@ -38,7 +39,7 @@ public class TagService : ITagService
         return newTag;
     }
 
-    public Tag? DeleteById(int id)
+    public Tag? DeleteById(ObjectId id)
     {
         // TODO: Double check that Memes that use this tag have this tag removed from them
         var existingTag = _context.Tags.SingleOrDefault(m => m.Id == id);

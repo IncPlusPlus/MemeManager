@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Collections;
 using Avalonia.Data.Converters;
@@ -18,6 +17,7 @@ using MemeManager.Services.Abstractions;
 using MemeManager.ViewModels.Interfaces;
 using Microsoft.Extensions.Logging;
 using ReactiveUI;
+using Realms;
 using Splat;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
@@ -47,11 +47,13 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
     private IFilterObserverService _filterObserver;
     private ILogger _logger;
     private string? _searchString;
+    private readonly Realm _realm = null!;
 
     public MemesListViewModel(ILogger logger, IDialogService dialogService,
         IFilterObserverService filterObserverService,
         IDbChangeNotifier dbChangeNotifierInstance, IMemeService memeService, ICategoryService categoryService)
     {
+        _realm = Realm.GetInstance();
         _logger = logger;
         _dialogService = dialogService;
         _filterObserver = filterObserverService;
@@ -87,9 +89,13 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
              * there will be a new observation but no new data. So, the current filters won't be distinct but we still want the search results to be updated.
              */
             // .DistinctUntilChanged()
-            .SelectMany(SearchMemes)
+            .Select(SearchMemes)
             .ObserveOn(RxApp.MainThreadScheduler)
             .ToProperty(this, x => x.SearchResults);
+        // _searchResults = _realm.All<Meme>()
+        //     // Return all memes if the category is null. Otherwise, filter by the category.
+        //     .Where(meme => CurrentCategory == null || meme.Category == CurrentCategory)
+        //     .Select(x => new FileViewModel(x));
 
         _searchResults.ThrownExceptions.Subscribe(error => _logger.LogError(error, "Error when searching for memes"));
 
@@ -106,6 +112,7 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
 
     public ReactiveCommand<IList<object?>, Unit> ImplicitShowDialogCommand { get; }
 
+    // TODO: Get rid of ToList() call
     public List<CategoryTreeNodeModel> Categories =>
         _categoryService.GetTopLevelCategories().Select(x => new CategoryTreeNodeModel(x, _categoryService)).ToList();
 
@@ -139,17 +146,21 @@ public class MemesListViewModel : ViewModelBase, IMemesListViewModel
     }
 
     // https://www.reactiveui.net/docs/getting-started/compelling-example
-    private async Task<IEnumerable<FileViewModel>> SearchMemes((Category? category, string? searchString) searchTerms,
-        CancellationToken token)
+    private IEnumerable<FileViewModel> SearchMemes((Category? category, string? searchString) searchTerms)
     {
-        /*
-         * TODO: This could be optimized to not have a .ToList call followed by another iteration by returning the
-         * IQueryable<Meme> instance instead of the List
-         */
-        var filteredResults = await _memeService.GetFilteredAsync(searchTerms.category, searchTerms.searchString, token)
-            .ConfigureAwait(false);
-        _logger.LogDebug("Finished search for category {CategoryName}", searchTerms.category?.Name);
-        return filteredResults.Select(x => new FileViewModel(x));
+        var myRealm = Realm.GetInstance();
+        // /*
+        //  * TODO: This could be optimized to not have a .ToList call followed by another iteration by returning the
+        //  * IQueryable<Meme> instance instead of the List
+        //  */
+        // var filteredResults = await _memeService.GetFilteredAsync(searchTerms.category, searchTerms.searchString, token)
+        //     .ConfigureAwait(false);
+        // _logger.LogDebug("Finished search for category {CategoryName}", searchTerms.category?.Name);
+        // return filteredResults.Select(x => new FileViewModel(x));
+        return myRealm.All<Meme>()
+            // Return all memes if the category is null. Otherwise, filter by the category.
+            .Where(meme => CurrentCategory == null || meme.Category == CurrentCategory)
+            .Select(x => new FileViewModel(x));
     }
 
     private void SubscribeToEvents()
