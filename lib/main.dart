@@ -1,7 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:meme_manager/models/search_model.dart';
+import 'package:meme_manager/widgets/meme_list.dart';
+import 'package:meme_manager/realm/app_services.dart';
+import 'package:meme_manager/realm/realm_services.dart';
+import 'package:meme_manager/screens/main_screen.dart';
+import 'package:provider/provider.dart';
+import 'dart:async';
+
+import 'package:realm/realm.dart';
 
 void main() {
-  runApp(const MyApp());
+  // runApp(const MyApp());
+  // WidgetsFlutterBinding.ensureInitialized();
+  runApp(MultiProvider(
+      providers: [
+        // Provider(create: (context) => MemeListModel()),
+        ListenableProvider(create: (context) => SearchModel()),
+        ChangeNotifierProvider<AppServices>(
+            create: (_) => AppServices()),
+        ChangeNotifierProxyProvider<AppServices, RealmServices?>(
+          // RealmServices can only be initialized only if the user is logged in.
+            create: (context) => null,
+            update: (BuildContext context, AppServices appServices,
+                RealmServices? realmServices) {
+              return RealmServices();
+            }),
+      ],
+      builder: (context, child) {
+        return const MyApp();
+      }));
 }
 
 class MyApp extends StatelessWidget {
@@ -31,7 +58,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      // home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MainScreen(),
     );
   }
 }
@@ -115,11 +143,11 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: _incrementCounter,
+      //   tooltip: 'Increment',
+      //   child: const Icon(Icons.add),
+      // ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
