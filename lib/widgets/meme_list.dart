@@ -7,7 +7,7 @@ import 'package:realm/realm.dart' hide ConnectionState;
 import 'package:meme_manager/realm/schemas.dart';
 
 class MemeList extends StatefulWidget {
-  const MemeList({Key? key}) : super(key: key);
+  const MemeList({super.key});
 
   @override
   State<MemeList> createState() => _MemeListState();
@@ -19,8 +19,6 @@ class _MemeListState extends State<MemeList> {
     final realmServices = Provider.of<RealmServices>(context);
     final int? selectedCategory =
         context.select((SearchModel model) => model.selectedCategory);
-    // Stream<RealmResultsChanges<Meme>> allMemes = realmServices.realm.all<Meme>().changes;
-    // Stream<RealmListChanges<Meme>> allMemesWhereCategoryIsCategory = realmServices.realm.find<Category>(selectedCategory)!.memes.changes;
     if (selectedCategory == null) {
       return StreamBuilder<RealmResultsChanges<Meme>>(
           stream: realmServices.realm.all<Meme>().changes,

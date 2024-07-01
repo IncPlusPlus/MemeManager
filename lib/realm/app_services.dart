@@ -2,8 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:meme_manager/realm/realm_services.dart';
-import 'package:provider/provider.dart';
 import 'package:realm/realm.dart';
 
 class Config extends ChangeNotifier {
@@ -30,5 +28,5 @@ class AppServices with ChangeNotifier {
   // Uri baseUrl;
   // App app;
   User? currentUser;
-  AppServices(){}
+  AppServices();
 }
