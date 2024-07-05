@@ -115,7 +115,7 @@ class _InnerMemeListState extends State<InnerMemeList> {
                    */
                   var shiftPressed = HardwareKeyboard.instance.isShiftPressed;
                   var ctrlPressed = HardwareKeyboard.instance.isControlPressed;
-                  print('Current selection: ${selectedIndexList.toString()}');
+                  // print('Current selection: ${selectedIndexList.toString()}');
                   if (lastSelectedIndex == null) {
                     setState(() {
                       selectionPivotPoint = null;
@@ -194,16 +194,16 @@ class _InnerMemeListState extends State<InnerMemeList> {
                       });
                     }
                   }
-                  print('New selection: ${selectedIndexList.toString()}');
+                  // print('New selection: ${selectedIndexList.toString()}');
                 },
-                onSecondaryTap: () {
-                  print(
-                      'Right clicked. Selection: ${selectedIndexList.toString()}');
-                },
-                onDoubleTap: () {
-                  print(
-                      'Double tap element $index with ${selectedIndexList.toString()}');
-                },
+                // onSecondaryTap: () {
+                //   print(
+                //       'Right clicked. Selection: ${selectedIndexList.toString()}');
+                // },
+                // onDoubleTap: () {
+                //   print(
+                //       'Double tap element $index with ${selectedIndexList.toString()}');
+                // },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: ListTile(
