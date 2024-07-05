@@ -23,57 +23,37 @@ class _MemeListState extends State<MemeList> {
     final realmServices = Provider.of<RealmServices>(context);
     final int? selectedCategory =
         context.select((SearchModel model) => model.selectedCategory);
-    // This is an ugly, ugly hack.
-    // I wish I could combine the two stream types so I don't repeat code.
-    // The problem is one class has the results property and one has the list property.
-    // Alas, my feeble grasp of Dart prevents such a feat.
-    if (selectedCategory == null) {
-      return StreamBuilder<RealmResultsChanges<Meme>>(
-          stream: realmServices.realm.all<Meme>().changes,
-          builder: (context, snapshot) => memeListBuilder(
-              context,
-              snapshot,
-              snapshot.hasData &&
-                  snapshot.data != null &&
-                  snapshot.data!.results.isNotEmpty,
-              snapshot.data?.results));
-    } else {
-      return StreamBuilder<RealmListChanges<Meme>>(
-          stream: realmServices.realm
-              .find<Category>(selectedCategory)!
-              .memes
-              .changes,
-          builder: (context, snapshot) => memeListBuilder(
-              context,
-              snapshot,
-              snapshot.hasData &&
-                  snapshot.data != null &&
-                  snapshot.data!.list.isNotEmpty,
-              snapshot.data?.list));
-    }
-  }
-
-  Widget memeListBuilder(context, snapshot, hasDataBool, resultsVar) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    } else {
-      if (hasDataBool) {
-        final results = resultsVar;
-        return InnerMemeList(results: results);
-      } else {
-        return const Center(
-          child: Text('No memes found'),
-        );
-      }
-    }
+    return StreamBuilder<RealmResultsChanges<Meme>>(
+      stream: selectedCategory == null ? realmServices.realm.all<Meme>().changes : realmServices.realm.find<Category>(selectedCategory)!.memes.asResults().changes,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        } else {
+          if (snapshot.hasData &&
+              snapshot.data != null &&
+              snapshot.data!.results.isNotEmpty) {
+            final RealmResults<Meme> results = snapshot.data!.results;
+            return InnerMemeList(results: results);
+          } else {
+            return const Center(
+              child: Text('No memes found'),
+            );
+          }
+        }
+      },
+    );
   }
 }
 
+// The actual MemesList GridView is kept as a separate widget because when
+// I had the GridView defined inside of _MemeListState, it would rebuild every
+// time an individual meme was selected. I couldn't find a good way to fix it.
+// So, I figured it would make sense to keep this state separate from DB changes anyways.
 class InnerMemeList extends StatefulWidget {
   // Will either be a RealmResults or a RealmList
-  final dynamic results;
+  final RealmResults<Meme> results;
 
   const InnerMemeList({super.key, required this.results});
 
